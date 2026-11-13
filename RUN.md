@@ -1,14 +1,32 @@
 # วิธีรันเว็บ Mini-Conference
 
-ต้องมี Node.js ในเครื่องก่อน (เช็กด้วย `node -v`)
+ใช้ได้ทั้ง macOS และ Windows ไม่ต้องลงแพ็กเกจเพิ่ม (ไม่ต้องรัน `npm install`)
+
+## ก่อนเริ่ม
+
+1. ติดตั้ง **Node.js** (เวอร์ชัน 18 ขึ้นไป) จาก https://nodejs.org
+   เช็กว่าติดตั้งแล้วด้วยคำสั่ง `node -v`
+2. คัดลอกโฟลเดอร์ `conference-website` ทั้งโฟลเดอร์ไปไว้ที่ไหนก็ได้ในเครื่อง
+3. เปิด Terminal (macOS) หรือ Command Prompt / PowerShell (Windows)
+   แล้วเข้าไปที่โฟลเดอร์ `app` ที่อยู่ข้างใน
+
+   ```bash
+   cd conference-website/app
+   ```
+
+   > ทางลัด: macOS คลิกขวาที่โฟลเดอร์ `app` → **New Terminal at Folder**
+   > Windows เปิดโฟลเดอร์ `app` แล้วพิมพ์ `cmd` ในช่อง address bar แล้วกด Enter
+
+คำสั่งทุกคำสั่งด้านล่างให้รัน **ในโฟลเดอร์ `app`**
 
 ## เปิดเว็บ (ใช้บ่อยสุด)
 
 ```bash
-cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run dev
+npm run dev
 ```
 
-แล้วเปิด **http://127.0.0.1:8080** ในเบราว์เซอร์ (ภาษาอังกฤษอยู่ที่ http://127.0.0.1:8080/en/ หรือกดปุ่ม EN มุมขวาบน)
+แล้วเปิด **http://127.0.0.1:8080** ในเบราว์เซอร์
+หน้าภาษาอังกฤษอยู่ที่ http://127.0.0.1:8080/en/ หรือกดปุ่ม **EN** ที่มุมขวาบน
 
 คำสั่งนี้ build เว็บใหม่ แล้วเปิดเซิร์ฟเวอร์ให้ในคำสั่งเดียว
 หยุดเซิร์ฟเวอร์: กด `Ctrl + C` ใน Terminal
@@ -17,15 +35,15 @@ cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run dev
 
 1. แก้ไฟล์ `app/src/data/conference-data.js` (ข้อมูลทุกหน้าอยู่ไฟล์นี้ไฟล์เดียว)
    ข้อความส่วนใหญ่เขียนเป็น `{ th: "ภาษาไทย", en: "English" }` ให้แก้ทั้งสองภาษา
-2. เปิด Terminal อีกแท็บแล้วรัน
+2. เปิด Terminal อีกหน้าต่างในโฟลเดอร์ `app` แล้วรัน
 
    ```bash
-   cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run build
+   npm run build
    ```
 
 3. Refresh หน้าเว็บ
 
-## คำสั่งทั้งหมด (รันในโฟลเดอร์ `app`)
+## คำสั่งทั้งหมด
 
 | คำสั่ง | ทำอะไร |
 |---|---|
@@ -35,10 +53,24 @@ cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run dev
 
 ## พอร์ต 8080 ถูกใช้อยู่
 
-ถ้าขึ้น error `EADDRINUSE` ให้เปลี่ยนพอร์ต:
+ถ้าขึ้น error `EADDRINUSE` ให้เปลี่ยนเป็นพอร์ตอื่น เช่น 8081
+
+macOS / Linux:
 
 ```bash
-cd /Users/dolphin/Desktop/Seminar/conference-website/app && PORT=8081 npm start
+PORT=8081 npm start
+```
+
+Windows (PowerShell):
+
+```powershell
+$env:PORT=8081; npm start
+```
+
+Windows (Command Prompt):
+
+```bat
+set PORT=8081 && npm start
 ```
 
 แล้วเปิด http://127.0.0.1:8081
@@ -46,14 +78,16 @@ cd /Users/dolphin/Desktop/Seminar/conference-website/app && PORT=8081 npm start
 ## ไม่อยากใช้เซิร์ฟเวอร์
 
 ดับเบิลคลิกไฟล์ `app/dist/index.html` เปิดในเบราว์เซอร์ได้เลย ลิงก์ทุกหน้าใช้ได้
+(ถ้ายังไม่มีโฟลเดอร์ `dist` ให้รัน `npm run build` ก่อน 1 ครั้ง)
 
 ## ไฟล์ที่ควรรู้
 
 | ไฟล์ | คืออะไร |
 |---|---|
-| `app/src/data/conference-data.js` | เนื้อหาทั้งหมด (ชื่องาน วันที่ ทีม หัวข้อ ฯลฯ) |
+| `app/src/data/conference-data.js` | เนื้อหาทั้งหมด ทั้งไทยและอังกฤษ (ชื่องาน วันที่ ทีม หัวข้อ ฯลฯ) |
 | `app/src/css/style.css` | สีและหน้าตา |
+| `app/src/img/` | รูปประกอบและโลโก้ |
 | `app/build.js` | ตัวสร้างหน้าเว็บ |
 | `app/serve.js` | เซิร์ฟเวอร์สำหรับเปิดดูในเครื่อง |
 | `app/dist/` | ไฟล์เว็บที่ build แล้ว (อย่าแก้ตรงนี้ จะโดนเขียนทับ) |
-| `DESIGN.md` | กฎเรื่องสี ฟอนต์ และภาษา |
+| `DESIGN.md` | กฎเรื่องสี ฟอนต์ ภาษา และโครงสร้าง |
