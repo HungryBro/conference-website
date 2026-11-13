@@ -1,0 +1,6 @@
+# Netlify local state
+.netlify/
+# build output (Netlify rebuilds it)
+app/dist/
+node_modules/
+.DS_Store

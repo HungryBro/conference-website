@@ -35,8 +35,8 @@ const CONFERENCE_DATA = {
     venue: TBA,
     venueNote: { th: "สถาบันเทคโนโลยีจิตรลดา", en: "Chitralada Technology Institute" },
     format: { th: "บรรยาย + โปสเตอร์", en: "Oral + Poster" },
-    audience: { th: "[กลุ่มเป้าหมาย — เช่น นักศึกษา อาจารย์ และผู้สนใจด้านวิศวกรรมคอมพิวเตอร์]",
-                en: "[Target audience — e.g. students, faculty and anyone interested in computer engineering]" },
+    audience: { th: "[กลุ่มเป้าหมาย เช่น นักศึกษา อาจารย์ และผู้สนใจด้านวิศวกรรมคอมพิวเตอร์]",
+                en: "[Target audience, e.g. students, faculty and anyone interested in computer engineering]" },
     status: { th: "กำลังเตรียมงาน", en: "In preparation" }
   },
 
@@ -144,7 +144,7 @@ const CONFERENCE_DATA = {
     systemNote: { th: "ระบบส่งบทความจะเปิดในสัปดาห์ที่ 4", en: "The submission system opens in week 4." },
     length: { th: "[จำนวนหน้า]", en: "[Page limit]" },
     language: { th: "[ภาษาของบทความ]", en: "[Paper language]" },
-    review: { th: "[รูปแบบการพิจารณา — เช่น ไม่เปิดเผยชื่อทั้งสองฝ่าย]", en: "[Review type — e.g. double-blind]" },
+    review: { th: "[รูปแบบการพิจารณา เช่น ไม่เปิดเผยชื่อทั้งสองฝ่าย]", en: "[Review type, e.g. double-blind]" },
     templates: [
       { label: { th: "เทมเพลต Word", en: "Word template" }, file: "" },
       { label: { th: "เทมเพลต LaTeX", en: "LaTeX template" }, file: "" }
@@ -169,13 +169,13 @@ const CONFERENCE_DATA = {
   // เปลี่ยนเป็นรูปจริงของงานได้: วางไฟล์ใหม่ใน src/img แล้วแก้ชื่อไฟล์ตรงนี้
   images: {
     hero: { file: "lecture-hall.jpg", alt: { th: "ห้องบรรยายขนาดใหญ่ที่มีจอโปรเจกเตอร์สองจอ", en: "Large lecture hall with two projector screens" },
-      credit: "Ohio University Lecture Hall — Garden Sprite (CC0)", source: "https://commons.wikimedia.org/wiki/File:Ohio_University_Lecture_Hall.jpg" },
+      credit: "Ohio University Lecture Hall, by Garden Sprite (CC0)", source: "https://commons.wikimedia.org/wiki/File:Ohio_University_Lecture_Hall.jpg" },
     poster: { file: "poster-session.jpg", alt: { th: "ผู้เข้าร่วมงานคุยกันหน้าโปสเตอร์งานวิจัย", en: "Attendees discussing a research poster" },
-      credit: "2016 AMS Annual Meeting Poster Session — NOAASatellites (Public domain)", source: "https://commons.wikimedia.org/wiki/File:2016_AMS_Annual_Meeting_Poster_Session_(24083760450).jpg" },
+      credit: "2016 AMS Annual Meeting Poster Session, by NOAASatellites (public domain)", source: "https://commons.wikimedia.org/wiki/File:2016_AMS_Annual_Meeting_Poster_Session_(24083760450).jpg" },
     research: { file: "computer-lab.jpg", alt: { th: "นักศึกษาทำงานร่วมกันในห้องปฏิบัติการคอมพิวเตอร์", en: "Students working together in a computer lab" },
-      credit: "Computer lab at vgdc — A Anesh (CC0)", source: "https://commons.wikimedia.org/wiki/File:Computer_lab_at_vgdc.jpg" },
+      credit: "Computer lab at vgdc, by A Anesh (CC0)", source: "https://commons.wikimedia.org/wiki/File:Computer_lab_at_vgdc.jpg" },
     panel: { file: "panel-discussion.jpg", alt: { th: "วิทยากรถือไมโครโฟนพูดบนเวทีงานประชุม", en: "Speaker with a microphone on a conference stage" },
-      credit: "2013 NOAA Satellite Conference — NOAASatellites (Public domain)", source: "https://commons.wikimedia.org/wiki/File:2013_NOAA_Satellite_Conference_(14378955640).jpg" }
+      credit: "2013 NOAA Satellite Conference, by NOAASatellites (public domain)", source: "https://commons.wikimedia.org/wiki/File:2013_NOAA_Satellite_Conference_(14378955640).jpg" }
   },
 
   contact: {

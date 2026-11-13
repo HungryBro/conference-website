@@ -373,7 +373,7 @@ function home() {
 
 <section class="section dark" id="authors">
   <div class="container">
-    ${sectionTitle(U("สำหรับผู้เขียน", "For Authors"), U("ทุกอย่างที่ต้องรู้ ตั้งแต่ส่งบทความจนถึงวันนำเสนอ", "Everything you need, from submission to presentation day"))}
+    ${sectionTitle(U("สำหรับผู้เขียน", "For Authors"), U("ขั้นตอนตั้งแต่ส่งบทความจนถึงวันนำเสนอ", "How to submit, present and follow the program"))}
     <div class="grid-3">${join(paths, ([k, im, ic, h, p]) => `
       <a class="photo-card reveal" href="${href(k)}">
         ${img(im)}
@@ -455,7 +455,7 @@ const pages = {
       { id: "workflow", title: U("ขั้นตอนของงาน", "Conference Workflow"), html: `<ol class="steps">${join(D.workflow, (w) => `<li>${esc(L(w))}</li>`)}</ol>` },
       { id: "roadmap", title: U("แผนงาน 9 สัปดาห์", "9-Week Roadmap"), lead: U("จากวางแผนถึงวันจัดงาน", "From planning to conference day"), html: `<div class="table-wrap"><table>
         <thead><tr><th>${U("สัปดาห์", "Week")}</th><th>${U("งานหลัก", "Milestone")}</th><th>${U("สถานะ", "Status")}</th></tr></thead>
-        <tbody>${join(D.roadmap, (r) => `<tr${r.done ? ' class="is-done"' : ""}><td class="num">${r.week}</td><td>${esc(L(r.title))}</td><td>${r.done ? `<span class="check">✓ ${U("เสร็จแล้ว", "Done")}</span>` : '<span class="ph">—</span>'}</td></tr>`)}</tbody>
+        <tbody>${join(D.roadmap, (r) => `<tr${r.done ? ' class="is-done"' : ""}><td class="num">${r.week}</td><td>${esc(L(r.title))}</td><td>${r.done ? `<span class="check">✓ ${U("เสร็จแล้ว", "Done")}</span>` : `<span class="ph">${U("ยังไม่ถึง", "Upcoming")}</span>`}</td></tr>`)}</tbody>
       </table></div>` },
       { id: "deliverables", title: U("สิ่งที่ต้องส่งในสัปดาห์ที่ 1", "Week 1 Deliverables"), html: `<div class="grid-3">${join([
         ["file", U("กฎบัตรงานประชุม", "Conference Charter"), U("เอกสารหน้านี้", "This page")],
@@ -467,7 +467,7 @@ const pages = {
 
   committee: () => {
     const chair = D.teams[0], rest = D.teams.slice(1);
-    return subpage(U("ทุกทีมต้องมีหัวหน้า สมาชิก และงานที่ต้องส่งชัดเจน ใส่ชื่อแทน “---” เมื่อแบ่งทีมเสร็จ", "Every team needs a lead, members and clear deliverables. Names replace “---” once teams are set."), [
+    return subpage(U('ทุกทีมต้องมีหัวหน้า สมาชิก และงานที่ต้องส่งชัดเจน ใส่ชื่อแทน "---" เมื่อแบ่งทีมเสร็จ', 'Every team needs a lead, members and clear deliverables. Names replace "---" once teams are set.'), [
       { id: "chart", title: U("ผังองค์กร", "Organization Chart"), html: `<div class="org">${teamCard(chair)}<div class="org-line" aria-hidden="true"></div><div class="org-row">${join(rest, teamCard)}</div></div>` },
       { id: "members", title: U("สมาชิกแต่ละทีม", "Team Members"), html: `<div class="accordion">${join(D.teams, (tm, i) => `
         <details${i === 0 ? " open" : ""}><summary><span>${esc(L(tm.name))}<small>${esc(L(tm.duty))}</small></span>${icon("chevron", 20)}</summary>
@@ -523,8 +523,8 @@ const pages = {
 
   venue: () => subpage("", [
     { id: "place", title: U("สถานที่", "Location"), html: `<div class="grid-2"><div>${contactList()}</div>
-      <div class="venue-img">${img("hero")}<span class="cap">${U("ภาพประกอบ — รอยืนยันห้องจัดงาน", "Illustration — room to be confirmed")}</span></div></div>` },
-    { id: "travel", title: U("การเดินทาง", "Getting There"), html: note(`<span class="ph">${U("[ข้อมูลการเดินทางและที่จอดรถ — ทีมสถานที่และการจัดงาน]", "[Travel and parking details — Venue & Logistics team]")}</span>`) }
+      <div class="venue-img">${img("hero")}<span class="cap">${U("ภาพประกอบ ห้องจัดงานยังรอยืนยัน", "Illustration only. The room is not confirmed yet.")}</span></div></div>` },
+    { id: "travel", title: U("การเดินทาง", "Getting There"), html: note(`<span class="ph">${U("[ข้อมูลการเดินทางและที่จอดรถ จากทีมสถานที่และการจัดงาน]", "[Travel and parking details from the Venue & Logistics team]")}</span>`) }
   ]),
 
   contact: () => subpage("", [
