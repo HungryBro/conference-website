@@ -287,12 +287,15 @@ a:hover > .circle-btn { background: var(--navy); transform: translateX(3px); }
 /* Teams */
 .team h3 { font-size: 19px; font-weight: 600; }
 .team p { color: var(--muted); margin-top: 6px; font-size: 16px; }
-.team .lead { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 15px; display: flex; justify-content: space-between; gap: 8px; }
-.team .lead span:first-child { color: var(--muted); }
+.team .people { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 15px; }
+.team .people li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+.team .people li span:first-child { color: var(--muted); }
+.team .people li span:last-child { font-weight: 600; color: var(--navy); text-align: right; }
 .team.is-chair { background: var(--navy); }
 .team.is-chair h3 { color: #fff; }
-.team.is-chair p, .team.is-chair .lead span { color: #E7EDF5; }
-.team.is-chair .lead { border-top-color: rgba(255,255,255,.2); }
+.team.is-chair p, .team.is-chair .people li span { color: #E7EDF5; }
+.team.is-chair .people { border-top-color: rgba(255,255,255,.2); }
+.team.is-chair .people li span:last-child { color: #fff; }
 .team.is-chair .ph { color: #C9D4E2; }
 
 /* Venue / contact */

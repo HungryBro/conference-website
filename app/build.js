@@ -122,6 +122,8 @@ const ICON = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   clipboard: '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h4"/>',
   presentation: '<path d="M2 3h20M4 3v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3M12 16v5M8 21h8"/><path d="m8 11 3-3 2 2 3-3"/>',
+  database: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  trend: '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/><path d="M16 8h4v4"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
 };
 const icon = (name, size, sw) => I(ICON[name] || ICON.info, size, sw);
@@ -297,11 +299,13 @@ const programTabs = (idPrefix) => {
   return `<div class="tabs" role="tablist" aria-label="${U("ช่วงเวลา", "Time of day")}">${tabs}</div>${panels}`;
 };
 
+const peopleRows = (tm) => join(tm.people, (p) => `<li><span>${esc(L(p.role))}</span><span>${t(p.name)}</span></li>`);
+const teamContact = (id) => { const tm = D.teams.find((x) => x.id === id); return tm ? tm.people[0].name : "---"; };
 const teamCard = (tm) => `
   <article class="card team reveal${tm.id === "chair" ? " is-chair" : ""}">
     <h3>${t(tm.name)}</h3>
     <p>${t(tm.duty)}</p>
-    <div class="lead"><span>${U("หัวหน้าทีม", "Team lead")}</span><span>${t(tm.lead)}</span></div>
+    <ul class="people">${peopleRows(tm)}</ul>
   </article>`;
 
 const speakerCards = () => `<div class="stack">${join(D.keynotes, (k) => `
@@ -496,7 +500,7 @@ const pages = {
       { id: "chart", title: U("ผังองค์กร", "Organization Chart"), html: `<div class="org">${teamCard(chair)}<div class="org-line" aria-hidden="true"></div><div class="org-row">${join(rest, teamCard)}</div></div>` },
       { id: "members", title: U("สมาชิกแต่ละทีม", "Team Members"), html: `<div class="accordion">${join(D.teams, (tm, i) => `
         <details${i === 0 ? " open" : ""}><summary><span>${esc(L(tm.name))}<small>${esc(L(tm.duty))}</small></span>${icon("chevron", 20)}</summary>
-        <div class="acc-body"><ul class="member-list"><li><span>${U("หัวหน้าทีม", "Team lead")}</span><span>${t(tm.lead)}</span></li>${join(tm.members, (m) => `<li><span>${U("สมาชิก", "Member")}</span><span>${t(m)}</span></li>`)}</ul></div></details>`)}</div>` },
+        <div class="acc-body"><ul class="member-list">${peopleRows(tm)}</ul></div></details>`)}</div>` },
       { id: "advisors", title: U("อาจารย์ประจำวิชา", "Course Instructors"), html: `<div class="grid-2">${join(D.course.instructors, (n) => `<div class="card speaker"><div class="avatar sm">${icon("user", 26)}</div><div><h3 style="font-size:18px">${esc(n)}</h3><p>${esc(L(D.course.faculty))}</p></div></div>`)}</div>` }
     ], { wide: true });
   },
@@ -558,9 +562,9 @@ const pages = {
       <li><span class="icon-tile">${icon("phone", 22)}</span><div><div class="k">${U("โทรศัพท์", "Phone")}</div><div class="v">${t(D.contact.phone)}</div></div></li>
       <li><span class="icon-tile">${icon("building", 22)}</span><div><div class="k">${U("สำนักงาน", "Office")}</div><div class="v">${t(D.contact.office)}</div></div></li></ul>` },
     { id: "teams", title: U("ติดต่อตามเรื่อง", "Who to Contact"), html: `<div class="table-wrap"><table><thead><tr><th>${U("เรื่อง", "Topic")}</th><th>${U("ทีม", "Team")}</th><th>${U("ผู้ติดต่อ", "Contact")}</th></tr></thead><tbody>${join([
-      [U("การส่งบทความ / การพิจารณา", "Submissions / reviews"), 1], [U("เว็บไซต์ / ลงทะเบียน", "Website / registration"), 3],
-      [U("สถานที่ / อุปกรณ์", "Venue / equipment"), 5], [U("เรื่องอื่น ๆ", "Anything else"), 0]],
-      ([topic, i]) => `<tr><td>${topic}</td><td>${esc(L(D.teams[i].name))}</td><td>${t(D.teams[i].lead)}</td></tr>`)}</tbody></table></div>` },
+      [U("การส่งบทความ / การพิจารณา", "Submissions / reviews"), "tpc"], [U("เว็บไซต์ / ลงทะเบียน", "Website / registration"), "web"],
+      [U("สถานที่ / อุปกรณ์", "Venue / equipment"), "venue"], [U("เรื่องอื่น ๆ", "Anything else"), "chair"]],
+      ([topic, id]) => `<tr><td>${topic}</td><td>${esc(L(D.teams.find((x) => x.id === id).name))}</td><td>${t(teamContact(id))}</td></tr>`)}</tbody></table></div>` },
     { id: "credits", title: U("ที่มาของภาพประกอบ", "Photo Credits"), html: `<ul class="member-list">${join(Object.values(IMG), (im) => `<li><span>${esc(im.credit)}</span><a href="${esc(im.source)}" target="_blank" rel="noopener">${U("ที่มา", "Source")} ↗</a></li>`)}</ul>` }
   ])
 };

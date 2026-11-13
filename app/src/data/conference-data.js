@@ -13,6 +13,9 @@
  */
 
 const TBA = { th: "รอประกาศ", en: "TBA" };
+const HEAD = { th: "หัวหน้า", en: "Head" };
+const SUBHEAD = { th: "รองหัวหน้า", en: "Subhead" };
+const LEAD = { th: "ผู้รับผิดชอบ", en: "Lead" };
 
 const CONFERENCE_DATA = {
   course: {
@@ -28,9 +31,10 @@ const CONFERENCE_DATA = {
   },
 
   conference: {
-    acronym: { th: "[ชื่อย่อ] 2026", en: "[ACRONYM] 2026" },
-    name: { th: "[ชื่องานประชุมวิชาการ]", en: "[Conference Name]" },
-    theme: { th: "[ธีมของงาน]", en: "[Conference Theme]" },
+    acronym: "ICC-CDTI 2026",
+    // ชื่อภาษาไทยแปลจากชื่ออังกฤษไว้ก่อน (ที่ประชุม 12/11/2026 ยังไม่ได้ตั้งชื่อไทย)
+    name: { th: "การประชุมวิชาการด้านคอมพิวเตอร์ภายใน CDTI ครั้งที่ 1", en: "The 1st Internal Computing CDTI Mini-Conference" },
+    theme: { th: "เทคโนโลยีนวัตกรรม", en: "Innovation Technology" },
     date: TBA,
     dateNote: { th: "สัปดาห์ที่ 9 ของภาคเรียน", en: "Week 9 of the semester" },
     venue: TBA,
@@ -59,20 +63,20 @@ const CONFERENCE_DATA = {
     { week: 9, title: { th: "วันจัดงาน", en: "Conference day" }, date: TBA, key: true }
   ],
 
-  // ขอบเขตหัวข้อ (จากสไลด์ Week 1) — ทีมยังเลือก/แก้ได้
+  // ประเภทโปรเจกต์ 6 กลุ่ม (ตกลงในที่ประชุม 12/11/2026) — คำอธิบายเป็นร่าง แก้ได้
   topics: [
-    { icon: "cpu", name: { th: "ปัญญาประดิษฐ์และวิทยาการข้อมูล", en: "AI & Data Science" },
-      desc: { th: "แอปพลิเคชันที่ใช้ AI ระบบอัจฉริยะ และการวิเคราะห์ข้อมูล", en: "AI-based applications, intelligent systems and data analytics" } },
-    { icon: "code", name: { th: "วิศวกรรมซอฟต์แวร์และแอปพลิเคชัน", en: "Software Engineering & Applications" },
-      desc: { th: "การพัฒนาซอฟต์แวร์ คุณภาพซอฟต์แวร์ และแอปพลิเคชัน", en: "Software development, software quality and applications" } },
-    { icon: "shield", name: { th: "เครือข่ายและความมั่นคงปลอดภัยไซเบอร์", en: "Computer Networks & Cybersecurity" },
-      desc: { th: "ระบบเครือข่าย การป้องกันภัย และความปลอดภัยของข้อมูล", en: "Network systems, threat protection and data security" } },
-    { icon: "chip", name: { th: "ระบบสมองกลฝังตัวและ IoT", en: "Embedded Systems & IoT" },
-      desc: { th: "ไมโครคอนโทรลเลอร์ เซนเซอร์ และอุปกรณ์เชื่อมต่อ", en: "Microcontrollers, sensors and connected devices" } },
-    { icon: "user", name: { th: "ปฏิสัมพันธ์ระหว่างมนุษย์กับคอมพิวเตอร์", en: "Human-Computer Interaction" },
-      desc: { th: "การออกแบบประสบการณ์ผู้ใช้และการประเมินการใช้งาน", en: "User experience design and usability evaluation" } },
-    { icon: "layers", name: { th: "ระบบคอมพิวเตอร์อัจฉริยะ", en: "Intelligent Computing Systems" },
-      desc: { th: "ระบบอัตโนมัติและระบบสนับสนุนการตัดสินใจ", en: "Automation and decision support systems" } }
+    { icon: "layers", name: { th: "ระบบ", en: "System" },
+      desc: { th: "ระบบสารสนเทศ แอปพลิเคชัน และสถาปัตยกรรมซอฟต์แวร์", en: "Information systems, applications and software architecture" } },
+    { icon: "cpu", name: { th: "ปัญญาประดิษฐ์", en: "Artificial Intelligence (AI)" },
+      desc: { th: "ระบบอัจฉริยะ การประมวลผลภาษาและภาพ", en: "Intelligent systems, language and image processing" } },
+    { icon: "database", name: { th: "ฐานข้อมูล", en: "Database" },
+      desc: { th: "การออกแบบฐานข้อมูล การจัดการและวิเคราะห์ข้อมูล", en: "Database design, data management and analytics" } },
+    { icon: "trend", name: { th: "การเรียนรู้ของเครื่อง", en: "Machine Learning (ML)" },
+      desc: { th: "โมเดลการเรียนรู้ของเครื่องสำหรับการพยากรณ์และการจำแนก", en: "Machine learning models for prediction and classification" } },
+    { icon: "chip", name: { th: "อินเทอร์เน็ตของสรรพสิ่ง", en: "Internet of Things (IoT)" },
+      desc: { th: "อุปกรณ์เชื่อมต่อ เซนเซอร์ และระบบสมองกลฝังตัว", en: "Connected devices, sensors and embedded systems" } },
+    { icon: "shield", name: { th: "ความมั่นคงปลอดภัย", en: "Security" },
+      desc: { th: "ความปลอดภัยของระบบ เครือข่าย และข้อมูล", en: "System, network and data security" } }
   ],
 
   // วิทยากร — เติมเมื่อได้ชื่อ
@@ -103,20 +107,21 @@ const CONFERENCE_DATA = {
     }
   ],
 
-  // โครงสร้างทีม (จากสไลด์ Week 1) — ใส่ชื่อแทน "---"
+  // ทีมผู้จัดงาน (ที่ประชุม 12/11/2026) — people: บทบาท + ชื่อ, ยังไม่มีคนใส่ "---"
+  // ชื่อแสดงเป็นภาษาไทยทั้ง 2 ภาษาไปก่อน ถ้ามีชื่อสะกดอังกฤษให้เขียน name: { th: "...", en: "..." }
   teams: [
     { id: "chair", name: { th: "ประธานจัดงาน", en: "General Chair" }, duty: { th: "ประสานงานภาพรวมของทุกทีม", en: "Overall coordination" },
-      lead: "---", members: ["---"] },
-    { id: "tpc", name: { th: "คณะกรรมการวิชาการ", en: "Technical Program Committee" }, duty: { th: "พิจารณาบทความและจัดโปรแกรม", en: "Paper review and program" },
-      lead: "---", members: ["---", "---"] },
-    { id: "pub", name: { th: "ทีมสิ่งพิมพ์", en: "Publication Team" }, duty: { th: "เทมเพลตบทความและรวมเล่มบทความ", en: "Templates and proceedings" },
-      lead: "---", members: ["---", "---"] },
-    { id: "web", name: { th: "ทีมเว็บไซต์และลงทะเบียน", en: "Website & Registration" }, duty: { th: "เว็บไซต์และระบบส่งบทความ", en: "Website and submissions" },
-      lead: "---", members: ["---", "---"] },
-    { id: "pr", name: { th: "ทีมประชาสัมพันธ์และออกแบบ", en: "Publicity & Design" }, duty: { th: "อัตลักษณ์ของงานและการประชาสัมพันธ์", en: "Visual identity and announcements" },
-      lead: "---", members: ["---", "---"] },
-    { id: "venue", name: { th: "ทีมสถานที่และการจัดงาน", en: "Venue & Logistics" }, duty: { th: "ห้อง อุปกรณ์ และการจัดงานในวันจริง", en: "Room, equipment and event operation" },
-      lead: "---", members: ["---", "---"] }
+      people: [{ role: HEAD, name: "วีรภัทร สาลีผล" }] },
+    { id: "tpc", name: { th: "ฝ่ายวิชาการ", en: "Technical Chair" }, duty: { th: "พิจารณาบทความและจัดโปรแกรม", en: "Paper review and program" },
+      people: [{ role: HEAD, name: "พชร เพิ่มพูล" }, { role: SUBHEAD, name: "พัชรนันท์" }] },
+    { id: "web", name: { th: "ฝ่ายเว็บไซต์และประชาสัมพันธ์", en: "Website & Public Chair" }, duty: { th: "เว็บไซต์ ระบบส่งบทความ และการประชาสัมพันธ์", en: "Website, submission system and publicity" },
+      people: [{ role: "Frontend", name: "กฤตชัย พรายศรี" }, { role: "Backend", name: "จุลพงศ์" }] },
+    { id: "design", name: { th: "ฝ่ายออกแบบ", en: "Design" }, duty: { th: "อัตลักษณ์ของงาน โปสเตอร์ และสื่อต่าง ๆ", en: "Visual identity, posters and media" },
+      people: [{ role: LEAD, name: "เนติ" }] },
+    { id: "venue", name: { th: "ฝ่ายสถานที่และการจัดงาน", en: "Venue & Logistics" }, duty: { th: "ห้อง อุปกรณ์ และการจัดงานในวันจริง", en: "Room, equipment and event operation" },
+      people: [{ role: HEAD, name: "กมลวรรณ" }, { role: SUBHEAD, name: "ชินวัตร" }] },
+    { id: "pub", name: { th: "ฝ่ายสิ่งพิมพ์", en: "Publication Team" }, duty: { th: "เทมเพลตบทความและรวมเล่มบทความ", en: "Templates and proceedings" },
+      people: [{ role: HEAD, name: "---" }] }
   ],
 
   // แผนงาน 9 สัปดาห์ (จากสไลด์ Week 1)
