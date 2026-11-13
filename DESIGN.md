@@ -11,12 +11,13 @@ Rules for anyone (or any AI tool) editing this site. Keep the look consistent wi
 |---|---|---|
 | `--page` | #F3F3F3 | page background |
 | `--navy` | #22374D | top bar, dark sections, footer, headings, table headers |
-| `--slate` | #607698 | buttons, photo-card bands, circle arrow buttons, active tab |
+| `--slate` | #536583 | buttons, photo-card bands, circle arrow buttons, active tab (darkened from CDTI #607698 so yellow text passes 4.5:1) |
 | `--yellow` | #F5EB14 | text on slate buttons (18px bold), numbers on navy, footer headings |
-| `--blue` | #4B78BC | links, focus ring (CDTI accent) |
+| `--blue` | #4B78BC | focus ring, decoration (CDTI accent) |
+| `--link` | #446FB0 | text links, current menu item (passes 4.5:1 on white and gray) |
 | `--sky-50` | #EEF3FB | icon tiles, hover backgrounds |
 | `--text` | #34445A | body text (no black) |
-| `--muted` | #66758A | secondary text |
+| `--muted` | #5E6D82 | secondary text and placeholders |
 
 Do not add new colors in components; use the tokens.
 
@@ -42,4 +43,7 @@ Do not add new colors in components; use the tokens.
 - Plain, short Thai sentences. No marketing language.
 
 ## Accessibility
+- All text meets WCAG AA 4.5:1. Check new colors before adding them.
+- Dropdowns close when focus leaves; the mobile drawer traps focus and makes the page behind it inert; tabs support arrows, Home, End and keep the choice in `?tab=`.
+- Images get width/height from the file at build time; the first banner image loads with `fetchpriority="high"`.
 - Touch targets ≥ 44px, visible focus ring, respects reduced motion, works at 375px width.

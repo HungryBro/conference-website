@@ -65,9 +65,32 @@ function ROOT() {
 }
 const href = (key, lang = LANG) => `${ROOT()}/${lang === "en" ? "en/" : ""}${PAGES[key].slug ? PAGES[key].slug + "/" : ""}index.html`;
 const asset = (p) => `${ROOT()}/${p}`;
-// decorative = true → empty alt (image only sets mood behind text)
-const img = (key, { cls = "", lazy = true, decorative = false } = {}) =>
-  `<img${cls ? ` class="${cls}"` : ""} src="${asset("img/" + IMG[key].file)}" alt="${decorative ? "" : esc(L(IMG[key].alt))}"${lazy ? ' loading="lazy"' : ""} decoding="async">`;
+// full URL for search engines (canonical / hreflang)
+const absHref = (key, lang) => `${D.course.siteUrl.replace(/\/$/, "")}/${lang === "en" ? "en/" : ""}${PAGES[key].slug ? PAGES[key].slug + "/" : ""}`;
+// Read width/height from the image file so the browser can reserve space (no layout shift).
+// Works for JPEG and PNG; swapping a photo in src/img keeps the numbers correct.
+const sizeCache = {};
+function imgSize(file) {
+  if (sizeCache[file]) return sizeCache[file];
+  const b = fs.readFileSync(path.join(SRC, "img", file));
+  let w = 0, h = 0;
+  if (b[0] === 0x89 && b[1] === 0x50) { w = b.readUInt32BE(16); h = b.readUInt32BE(20); }
+  else if (b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i < b.length) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const m = b[i + 1];
+      if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { h = b.readUInt16BE(i + 5); w = b.readUInt16BE(i + 7); break; }
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+  }
+  return (sizeCache[file] = { w, h });
+}
+// decorative = true → empty alt (image only sets mood behind text); priority = above-the-fold image
+const img = (key, { cls = "", lazy = true, decorative = false, priority = false } = {}) => {
+  const { w, h } = imgSize(IMG[key].file);
+  return `<img${cls ? ` class="${cls}"` : ""} src="${asset("img/" + IMG[key].file)}" alt="${decorative ? "" : esc(L(IMG[key].alt))}"${w ? ` width="${w}" height="${h}"` : ""}${lazy ? ' loading="lazy"' : ""}${priority ? ' fetchpriority="high"' : ""} decoding="async">`;
+};
 
 /* ---------- icons ---------- */
 const I = (d, size = 20, sw = 1.8) =>
@@ -142,18 +165,20 @@ function layout(body) {
   const title = CUR === "home"
     ? `${plain(C.acronym)} · ${U("งานประชุมวิชาการ", "Mini-Conference")} ${K.code} ${K.instituteShort}`
     : `${pageName(CUR)} · ${plain(C.acronym)}`;
-  const ticker = D.dates.map((d) => `${L(d.title)} ${U("สัปดาห์ที่", "week")} ${d.week}`).join(" · ");
+  const ticker = D.dates.filter((d) => d.key).map((d) => `${L(d.title)} ${U("สัปดาห์ที่", "week")} ${d.week}`).join(" · ");
   return `<!DOCTYPE html>
 <html lang="${LANG}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(U("งานประชุมวิชาการของรายวิชา", "Mini-conference of course"))} ${K.code} ${esc(L(K.name))} · ${esc(L(K.faculty))} · ${esc(L(K.institute))}">
 <meta name="theme-color" content="#22374D">
 <meta name="color-scheme" content="light">
-<link rel="alternate" hreflang="th" href="${href(CUR, "th")}">
-<link rel="alternate" hreflang="en" href="${href(CUR, "en")}">
+<link rel="canonical" href="${absHref(CUR, LANG)}">
+<link rel="alternate" hreflang="th" href="${absHref(CUR, "th")}">
+<link rel="alternate" hreflang="en" href="${absHref(CUR, "en")}">
+<link rel="alternate" hreflang="x-default" href="${absHref(CUR, "th")}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Niramit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -161,12 +186,12 @@ function layout(body) {
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
-<a class="skip-link" href="#main">${U("ข้ามไปเนื้อหา", "Skip to content")}</a>
+<a class="skip-link" href="#main">${U("ข้ามไปเนื้อหา", "Skip to Content")}</a>
 
 <div class="topbar">
   <div class="container">
     ${icon("megaphone", 20)}
-    <div class="ticker">${U("ประกาศ", "News")}: ${esc(ticker)}</div>
+    <a class="ticker" href="${href("cfp")}#dates"><b>${U("ประกาศ", "News")}:</b> ${esc(ticker)} · ${U("ดูกำหนดการทั้งหมด", "See All Dates")} →</a>
     <span class="code">${K.code}</span>
     <a href="${K.instituteUrl}" target="_blank" rel="noopener">cdti.ac.th ↗</a>
   </div>
@@ -228,12 +253,12 @@ ${body}
 const sectionTitle = (title, sub, more) => `
   <div class="section-title reveal">
     <div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div>
-    ${more ? `<a class="more" href="${href(more)}">${U("ดูทั้งหมด", "View all")} ${icon("arrow", 18)}</a>` : ""}
+    ${more ? `<a class="more" href="${href(more)}">${U("ดูทั้งหมด", "View All")} ${icon("arrow", 18)}</a>` : ""}
   </div>`;
 
 const pageHero = (intro) => `
   <section class="page-hero">
-    ${img(PAGES[CUR].img, { lazy: false, decorative: true })}
+    ${img(PAGES[CUR].img, { lazy: false, decorative: true, priority: true })}
     <div class="container">
       <nav class="crumbs" aria-label="${U("เส้นทางนำทาง", "Breadcrumb")}"><a href="${href("home")}">${pageName("home")}</a><span aria-hidden="true">/</span><span>${pageName(CUR)}</span></nav>
       <h1>${pageName(CUR)}</h1>
@@ -311,7 +336,7 @@ function home() {
   ];
   return layout(`
 <section class="hero" id="top">
-  ${img("hero", { cls: "hero-img", lazy: false, decorative: true })}
+  ${img("hero", { cls: "hero-img", lazy: false, decorative: true, priority: true })}
   <div class="container">
     <span class="status"><span class="status-dot" aria-hidden="true"></span>${t(C.status)}</span>
     <h1>${t(C.name)}</h1>
@@ -365,7 +390,7 @@ function home() {
       </a>
       <div class="reveal">
         ${dateRows()}
-        <div class="news-actions"><a class="btn btn-cdti" href="${href("cfp")}">${U("ดูทั้งหมด", "View all")} ${icon("arrow", 20, 2.2)}</a></div>
+        <div class="news-actions"><a class="btn btn-cdti" href="${href("cfp")}">${U("ดูทั้งหมด", "View All")} ${icon("arrow", 20, 2.2)}</a></div>
       </div>
     </div>
   </div>
@@ -433,7 +458,7 @@ function subpage(intro, sections, opts = {}) {
 ${pageHero(intro)}
 <div class="page-body"><div class="container">
   <div class="page-layout${opts.wide ? " wide" : ""}">
-    ${opts.wide ? "" : `<aside class="page-toc" aria-label="${U("ในหน้านี้", "On this page")}">${toc.length > 1 ? `<strong>${U("ในหน้านี้", "On this page")}</strong>${join(toc, (s) => `<a href="#${s.id}">${s.title}</a>`)}` : `<strong>${pageName(CUR)}</strong><a href="${href("home")}">${U("กลับหน้าแรก", "Back to home")}</a>`}</aside>`}
+    ${opts.wide ? "" : `<aside class="page-toc" aria-label="${U("ในหน้านี้", "On this page")}">${toc.length > 1 ? `<strong>${U("ในหน้านี้", "On this page")}</strong>${join(toc, (s) => `<a href="#${s.id}">${s.title}</a>`)}` : `<strong>${pageName(CUR)}</strong><a href="${href("home")}">${U("กลับหน้าแรก", "Back to Home")}</a>`}</aside>`}
     <div class="page-main">${join(sections, (s) => `
       <section class="block${s.bare ? " bare" : ""}"${s.id ? ` id="${s.id}"` : ""}>${s.title ? `<h2>${s.title}</h2>` : ""}${s.lead ? `<p class="lead-text">${s.lead}</p>` : ""}${s.html}</section>`)}
     </div>
@@ -490,16 +515,16 @@ const pages = {
       { id: "types", title: U("รูปแบบการนำเสนอ", "Presentation Formats"), html: `<div class="grid-2">
         <div class="card"><span class="tag oral">${L(TAG.oral)}</span><h3 style="margin-top:12px">${U("นำเสนอแบบบรรยาย 4 บทความ", "4 oral presentations")}</h3><p style="color:var(--muted)">${U("เวลานำเสนอ", "Talk length")} ${t({ th: "รอประกาศ", en: "TBA" })}</p></div>
         <div class="card"><span class="tag poster">${L(TAG.poster)}</span><h3 style="margin-top:12px">${U("นำเสนอแบบโปสเตอร์ 10 บทความ", "10 poster presentations")}</h3><p style="color:var(--muted)">${U("ขนาดโปสเตอร์", "Poster size")} ${t({ th: "รอประกาศ", en: "TBA" })}</p></div></div>` },
-      { bare: true, html: `<a class="btn btn-cdti" href="${href("submission")}">${U("วิธีส่งบทความ", "How to submit")} ${icon("arrow", 20, 2.2)}</a>` }
+      { bare: true, html: `<a class="btn btn-cdti" href="${href("submission")}">${U("วิธีส่งบทความ", "How to Submit")} ${icon("arrow", 20, 2.2)}</a>` }
     ]);
   },
 
   submission: () => {
     const S = D.submission;
     return subpage(U("รูปแบบบทความ เทมเพลต และช่องทางส่งบทความ", "Paper format, templates and where to submit."), [
-      { id: "system", title: U("ระบบส่งบทความ", "Submission System"), html: `${note(esc(L(S.systemNote)))}<p style="margin-top:16px"><a class="btn btn-cdti" aria-disabled="true" tabindex="-1">${U("ไปที่ระบบส่งบทความ", "Go to submission system")}</a></p>` },
+      { id: "system", title: U("ระบบส่งบทความ", "Submission System"), html: `${note(esc(L(S.systemNote)))}<p style="margin-top:16px"><a class="btn btn-cdti" aria-disabled="true" tabindex="-1">${U("ไปที่ระบบส่งบทความ", "Go to Submission System")}</a></p>` },
       { id: "format", title: U("รูปแบบบทความ", "Paper Format"), html: kv([[U("ความยาว", "Length"), t(S.length)], [U("ภาษา", "Language"), t(S.language)], [U("การพิจารณา", "Review"), t(S.review)], [U("ไฟล์ที่ส่ง", "File type"), "PDF"]]) },
-      { id: "templates", title: U("เทมเพลต", "Templates"), html: `<div class="grid-2">${join(S.templates, (tp) => `<div class="card speaker"><div class="icon-tile">${icon("file", 24)}</div><div style="flex:1"><h3 style="font-size:18px">${esc(L(tp.label))}</h3><p>${tp.file ? `<a href="${esc(tp.file)}">${U("ดาวน์โหลด", "Download")}</a>` : `<span class="ph">${U("เร็ว ๆ นี้", "Coming soon")}</span>`}</p></div></div>`)}</div>` },
+      { id: "templates", title: U("เทมเพลต", "Templates"), html: `<div class="grid-2">${join(S.templates, (tp) => `<div class="card speaker"><div class="icon-tile">${icon("file", 24)}</div><div style="flex:1"><h3 style="font-size:18px">${esc(L(tp.label))}</h3><p>${tp.file ? `<a href="${esc(tp.file)}">${U("ดาวน์โหลด", "Download")}</a>` : `<span class="ph">${U("เร็ว ๆ นี้", "Coming Soon")}</span>`}</p></div></div>`)}</div>` },
       { id: "steps", title: U("ขั้นตอน", "Steps"), html: `<ol class="steps">${join(U(["เขียนบทความตามเทมเพลต", "ส่งผ่านระบบ", "รอผลการพิจารณา", "แก้ไขตามความเห็น", "ส่งฉบับสมบูรณ์"], ["Write using the template", "Submit online", "Wait for reviews", "Revise", "Send the camera-ready version"]), (x) => `<li>${x}</li>`)}</ol>` }
     ]);
   },

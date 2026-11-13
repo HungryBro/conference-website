@@ -3,23 +3,60 @@
   var doc = document;
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Mobile menu */
+  /* Mobile menu (drawer)
+     - focus moves into the drawer when it opens and back to the button when it closes
+     - the rest of the page is made inert so Tab stays inside the drawer */
   var toggle = doc.querySelector(".menu-toggle");
   var nav = doc.getElementById("site-nav");
-  function setMenu(open) {
+  var drawerMode = window.matchMedia("(max-width: 1240px)");
+  function focusables() {
+    return Array.prototype.filter.call(
+      nav.querySelectorAll("a[href], button:not([disabled])"),
+      function (el) { return el.offsetParent !== null; }
+    );
+  }
+  function setMenu(open, returnFocus) {
     if (!nav || !toggle) return;
+    var wasOpen = nav.classList.contains("open");
     nav.classList.toggle("open", open);
     toggle.setAttribute("aria-expanded", String(open));
     toggle.setAttribute("aria-label", open ? toggle.dataset.labelClose : toggle.dataset.labelOpen);
     doc.body.style.overflow = open ? "hidden" : "";
+    doc.querySelectorAll("main, footer, .topbar, .brand, .to-top, .skip-link").forEach(function (el) {
+      if (open) el.setAttribute("inert", ""); else el.removeAttribute("inert");
+    });
+    if (open && !wasOpen) {
+      // wait for the drawer to become visible before moving focus
+      setTimeout(function () { var f = focusables(); if (f.length) f[0].focus(); }, 60);
+    } else if (!open && wasOpen && returnFocus) {
+      toggle.focus();
+    }
   }
-  if (toggle) toggle.addEventListener("click", function () { setMenu(!nav.classList.contains("open")); });
+  if (toggle) {
+    toggle.addEventListener("click", function () { setMenu(!nav.classList.contains("open"), true); });
+    nav.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || !nav.classList.contains("open")) return;
+      var f = focusables(), first = f[0], last = f[f.length - 1];
+      if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); toggle.focus(); }
+      else if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); toggle.focus(); }
+    });
+    toggle.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab" || !nav.classList.contains("open")) return;
+      var f = focusables();
+      if (!f.length) return;
+      e.preventDefault();
+      (e.shiftKey ? f[f.length - 1] : f[0]).focus();
+    });
+    var onMode = function () { if (!drawerMode.matches) setMenu(false); };
+    if (drawerMode.addEventListener) drawerMode.addEventListener("change", onMode);
+  }
 
   /* Dropdowns
      - click/tap/Enter toggles .open (the source of truth)
      - hover also previews on desktop (CSS), but a click that closes the menu
        adds .no-hover so it really disappears until the mouse leaves
-     - hovering another item closes any menu opened by click → never two at once */
+     - hovering another item closes any menu opened by click → never two at once
+     - moving keyboard focus out of a menu closes it */
   var dropButtons = doc.querySelectorAll(".nav-item > button.nav-link");
   function closeDrops(except) {
     dropButtons.forEach(function (b) {
@@ -40,19 +77,31 @@
     });
     item.addEventListener("mouseenter", function () { closeDrops(btn); });
     item.addEventListener("mouseleave", function () { item.classList.remove("no-hover"); });
+    item.addEventListener("focusout", function (e) {
+      if (e.relatedTarget && !item.contains(e.relatedTarget)) {
+        item.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+    });
   });
   doc.querySelectorAll(".nav-main > .nav-item").forEach(function (li) {
     if (!li.querySelector(".dropdown")) li.addEventListener("mouseenter", function () { closeDrops(); });
   });
   doc.addEventListener("click", function () { closeDrops(); });
   doc.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { closeDrops(); setMenu(false); }
+    if (e.key !== "Escape") return;
+    var openItem = doc.querySelector(".nav-item.open");
+    closeDrops();
+    if (openItem) openItem.querySelector("button").focus();
+    else setMenu(false, true);
   });
 
-  /* Tabs (program) */
+  /* Tabs (program)
+     - arrow keys, Home and End move between tabs
+     - the chosen tab is kept in the URL (?tab=1) so a shared link opens the same tab */
   doc.querySelectorAll("[role=tablist]").forEach(function (list) {
     var tabs = Array.prototype.slice.call(list.querySelectorAll("[role=tab]"));
-    function select(tab, focus) {
+    function select(tab, focus, updateUrl) {
       tabs.forEach(function (t) {
         var on = t === tab;
         t.setAttribute("aria-selected", String(on));
@@ -61,14 +110,24 @@
         if (panel) panel.hidden = !on;
       });
       if (focus) tab.focus();
+      if (updateUrl && window.history && history.replaceState) {
+        var url = new URL(location.href);
+        var i = tabs.indexOf(tab);
+        if (i === 0) url.searchParams.delete("tab"); else url.searchParams.set("tab", String(i));
+        history.replaceState(null, "", url);
+      }
     }
+    var start = parseInt(new URLSearchParams(location.search).get("tab"), 10);
+    if (start > 0 && tabs[start]) select(tabs[start], false, false);
     tabs.forEach(function (tab, i) {
-      tab.addEventListener("click", function () { select(tab); });
+      tab.addEventListener("click", function () { select(tab, false, true); });
       tab.addEventListener("keydown", function (e) {
         var n = null;
         if (e.key === "ArrowRight") n = tabs[(i + 1) % tabs.length];
         if (e.key === "ArrowLeft") n = tabs[(i - 1 + tabs.length) % tabs.length];
-        if (n) { e.preventDefault(); select(n, true); }
+        if (e.key === "Home") n = tabs[0];
+        if (e.key === "End") n = tabs[tabs.length - 1];
+        if (n) { e.preventDefault(); select(n, true, true); }
       });
     });
   });

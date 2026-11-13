@@ -22,6 +22,7 @@ const CONFERENCE_DATA = {
     institute: { th: "สถาบันเทคโนโลยีจิตรลดา", en: "Chitralada Technology Institute" },
     instituteShort: "CDTI",
     instituteUrl: "https://www.cdti.ac.th",
+    siteUrl: "https://cpe-seminar-2026.netlify.app",   // ลิงก์เว็บจริง (ใช้บอก Google ว่ามี 2 ภาษา)
     instructors: ["Sumalee Unhavanich", "Arnon Rungsawang"],
     year: "2026"
   },
