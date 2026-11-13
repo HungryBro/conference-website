@@ -1,6 +1,12 @@
 /**
  * Static site builder: reads src/data/conference-data.js and writes dist/.
  * Run: npm run build   (or: node build.js)
+ *
+ * Builds two languages from the same data:
+ *   dist/            → ภาษาไทย
+ *   dist/en/         → English
+ * The ไทย/EN switch in the gray utility bar links to the same page in the other language.
+ *
  * Layout follows cdti.ac.th (top bar, 2-row header, banner + quick links, news rows,
  * navy band with photo cards); content structure follows ECTI-FIT + CCAT.
  */
@@ -11,21 +17,59 @@ const D = require("./src/data/conference-data.js");
 const SRC = path.join(__dirname, "src");
 const DIST = path.join(__dirname, "dist");
 const IMG = D.images;
+const LANGS = ["th", "en"];
+
+/* ---------- build context (set per page) ---------- */
+let LANG = "th";   // current language
+let CUR = "home";  // current page key
 
 /* ---------- helpers ---------- */
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-// Escape text and mark placeholders ([...], รอประกาศ, TBA, ---, --:--) so they render faded.
-const t = (s) => {
-  const raw = String(s ?? "");
+// pick the current language from { th, en }, or return a plain string as-is
+const L = (v) => (v && typeof v === "object" && ("th" in v || "en" in v) ? (v[LANG] ?? v.th ?? v.en) : v);
+// inline UI string
+const U = (th, en) => (LANG === "en" ? en : th);
+// escape + mark placeholders ([...], รอประกาศ, TBA, ---, --:--) so they render faded
+const t = (v) => {
+  const raw = String(L(v) ?? "");
   if (/^(TBA|รอประกาศ|---|--:--)$/.test(raw.trim())) return `<span class="ph">${esc(raw)}</span>`;
   return esc(raw).replace(/\[[^\]]+\]/g, (m) => `<span class="ph">${m}</span>`);
 };
-const plain = (s) => String(s ?? "").replace(/[\[\]]/g, "");
+const plain = (v) => String(L(v) ?? "").replace(/[\[\]]/g, "");
 const join = (arr, fn) => arr.map(fn).join("");
-// decorative = true → empty alt (image only sets mood behind text)
-const img = (key, rel, { cls = "", lazy = true, decorative = false } = {}) =>
-  `<img${cls ? ` class="${cls}"` : ""} src="${rel}/img/${IMG[key].file}" alt="${decorative ? "" : esc(IMG[key].alt)}"${lazy ? ' loading="lazy"' : ""} decoding="async">`;
 
+/* ---------- paths ---------- */
+const PAGES = {
+  home: { slug: "" , th: "หน้าแรก", en: "Home" },
+  about: { slug: "about", th: "กฎบัตรงานประชุม", en: "Conference Charter", img: "panel",
+    desc: { th: "เป้าหมาย ขอบเขต และแผนงาน 9 สัปดาห์", en: "Goals, scope and 9-week roadmap" } },
+  committee: { slug: "committee", th: "คณะผู้จัดงาน", en: "Organizing Committee", img: "research",
+    desc: { th: "ผังองค์กรและหน้าที่ 6 ทีม", en: "Organization chart and 6 teams" } },
+  archive: { slug: "archive", th: "งานที่ผ่านมา", en: "Past Conferences", img: "hero",
+    desc: { th: "งานประชุมครั้งก่อน ๆ", en: "Previous editions" } },
+  cfp: { slug: "cfp", th: "ประกาศรับบทความ", en: "Call for Papers", img: "poster",
+    desc: { th: "หัวข้อ ขอบเขต และกำหนดการ", en: "Topics, scope and dates" } },
+  submission: { slug: "submission", th: "การส่งบทความ", en: "Paper Submission", img: "research",
+    desc: { th: "รูปแบบบทความ เทมเพลต และระบบส่ง", en: "Format, templates and system" } },
+  program: { slug: "program", th: "กำหนดการ", en: "Program", img: "panel" },
+  registration: { slug: "registration", th: "ลงทะเบียน", en: "Registration", img: "hero" },
+  venue: { slug: "venue", th: "สถานที่จัดงาน", en: "Venue", nav: { th: "สถานที่", en: "Venue" }, img: "hero" },
+  contact: { slug: "contact", th: "ติดต่อเรา", en: "Contact", img: "research" }
+};
+const pageName = (k) => (LANG === "en" ? PAGES[k].en : PAGES[k].th);
+
+// relative path from the current page back to dist/
+function ROOT() {
+  const depth = (LANG === "en" ? 1 : 0) + (CUR === "home" ? 0 : 1);
+  return depth === 0 ? "." : Array(depth).fill("..").join("/");
+}
+const href = (key, lang = LANG) => `${ROOT()}/${lang === "en" ? "en/" : ""}${PAGES[key].slug ? PAGES[key].slug + "/" : ""}index.html`;
+const asset = (p) => `${ROOT()}/${p}`;
+// decorative = true → empty alt (image only sets mood behind text)
+const img = (key, { cls = "", lazy = true, decorative = false } = {}) =>
+  `<img${cls ? ` class="${cls}"` : ""} src="${asset("img/" + IMG[key].file)}" alt="${decorative ? "" : esc(L(IMG[key].alt))}"${lazy ? ' loading="lazy"' : ""} decoding="async">`;
+
+/* ---------- icons ---------- */
 const I = (d, size = 20, sw = 1.8) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICON = {
@@ -49,49 +93,43 @@ const ICON = {
   chip: '<path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1"/>',
   layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/>',
   archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
-  mark: '<path d="M4 19V8l8-4 8 4v11"/><path d="M8 19v-6h8v6M2 19h20"/>',
   pencil: '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/>',
   megaphone: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   clipboard: '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h4"/>',
-  presentation: '<path d="M2 3h20M4 3v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3M12 16v5M8 21h8"/><path d="m8 11 3-3 2 2 3-3"/>'
+  presentation: '<path d="M2 3h20M4 3v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3M12 16v5M8 21h8"/><path d="m8 11 3-3 2 2 3-3"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
 };
 const icon = (name, size, sw) => I(ICON[name] || ICON.info, size, sw);
+const TAG = { oral: { th: "บรรยาย", en: "Oral" }, poster: { th: "โปสเตอร์", en: "Poster" }, talk: { th: "พิธีการ", en: "Plenary" }, break: { th: "พัก", en: "Break" } };
 
 /* ---------- navigation ---------- */
-const PAGES = {
-  home: { slug: "", th: "หน้าแรก" },
-  about: { slug: "about", th: "กฎบัตรงานประชุม", desc: "เป้าหมาย ขอบเขต และแผนงาน 9 สัปดาห์", img: "panel" },
-  committee: { slug: "committee", th: "คณะผู้จัดงาน", desc: "ผังองค์กรและหน้าที่ 6 ทีม", img: "research" },
-  archive: { slug: "archive", th: "งานที่ผ่านมา", desc: "งานประชุมครั้งก่อน ๆ", img: "hero" },
-  cfp: { slug: "cfp", th: "ประกาศรับบทความ", desc: "หัวข้อ ขอบเขต และกำหนดการ", img: "poster" },
-  submission: { slug: "submission", th: "การส่งบทความ", desc: "รูปแบบบทความ เทมเพลต และระบบส่ง", img: "research" },
-  program: { slug: "program", th: "กำหนดการ", img: "panel" },
-  registration: { slug: "registration", th: "ลงทะเบียน", img: "hero" },
-  venue: { slug: "venue", th: "สถานที่จัดงาน", nav: "สถานที่", img: "hero" },
-  contact: { slug: "contact", th: "ติดต่อเรา", img: "research" }
-};
-const href = (key, rel) => (key === "home" ? `${rel}/index.html` : `${rel}/${PAGES[key].slug}/index.html`);
+function langSwitch() {
+  return `<div class="lang-switch" role="group" aria-label="${U("เลือกภาษา", "Choose language")}">${icon("globe", 15)}
+      <a href="${href(CUR, "th")}" lang="th" hreflang="th"${LANG === "th" ? ' aria-current="true"' : ""}>ไทย</a>
+      <a href="${href(CUR, "en")}" lang="en" hreflang="en"${LANG === "en" ? ' aria-current="true"' : ""}>EN</a>
+    </div>`;
+}
 
-function navHtml(current, rel) {
-  const cur = (k) => (current === k ? ' aria-current="page"' : "");
-  const link = (key) => `<li class="nav-item"><a class="nav-link" href="${href(key, rel)}"${cur(key)}>${PAGES[key].nav || PAGES[key].th}</a></li>`;
-  const drop = (label, keys, id) => `<li class="nav-item${keys.includes(current) ? " is-current" : ""}">
+function navHtml() {
+  const cur = (k) => (CUR === k ? ' aria-current="page"' : "");
+  const link = (key) => `<li class="nav-item"><a class="nav-link" href="${href(key)}"${cur(key)}>${PAGES[key].nav ? L(PAGES[key].nav) : pageName(key)}</a></li>`;
+  const drop = (label, keys, id) => `<li class="nav-item${keys.includes(CUR) ? " is-current" : ""}">
       <button class="nav-link" type="button" aria-expanded="false" aria-controls="dd-${id}">${label}${icon("chevron", 16)}</button>
-      <div class="dropdown" id="dd-${id}">${join(keys, (k) => `<a href="${href(k, rel)}"${cur(k)}><strong>${PAGES[k].th}</strong><small>${PAGES[k].desc}</small></a>`)}</div>
+      <div class="dropdown" id="dd-${id}">${join(keys, (k) => `<a href="${href(k)}"${cur(k)}><strong>${pageName(k)}</strong><small>${L(PAGES[k].desc)}</small></a>`)}</div>
     </li>`;
-  return `<nav class="nav" id="site-nav" aria-label="เมนูหลัก">
+  return `<nav class="nav" id="site-nav" aria-label="${U("เมนูหลัก", "Main menu")}">
     <div class="nav-top">
-      <a href="${href("archive", rel)}">งานที่ผ่านมา</a>
-      <a href="${href("contact", rel)}">ติดต่อเรา</a>
-      <a href="${D.course.instituteUrl}" target="_blank" rel="noopener">เว็บสถาบัน ↗</a>
+      <a href="${href("archive")}">${pageName("archive")}</a>
+      <a href="${href("contact")}">${pageName("contact")}</a>
+      ${langSwitch()}
     </div>
     <ul class="nav-main">
-      <li><a class="nav-cta" href="${href("submission", rel)}">${icon("pencil", 17)}ส่งบทความ</a></li>
+      <li><a class="nav-cta" href="${href("submission")}">${icon("pencil", 17)}${U("ส่งบทความ", "Submit Paper")}</a></li>
       ${link("home")}
-      ${drop("เกี่ยวกับงาน", ["about", "committee", "archive"], "about")}
-      ${drop("บทความ", ["cfp", "submission"], "papers")}
+      ${drop(U("เกี่ยวกับงาน", "About"), ["about", "committee", "archive"], "about")}
+      ${drop(U("บทความ", "Papers"), ["cfp", "submission"], "papers")}
       ${link("program")}
       ${link("registration")}
       ${link("venue")}
@@ -99,34 +137,36 @@ function navHtml(current, rel) {
   </nav>`;
 }
 
-function layout({ key, rel, body }) {
+function layout(body) {
   const C = D.conference, K = D.course;
-  const title = key === "home"
-    ? `${plain(C.acronym)} · งานประชุมวิชาการ ${K.code} ${K.instituteShort}`
-    : `${PAGES[key].th} · ${plain(C.acronym)}`;
-  const ticker = D.dates.map((d) => `${d.th} สัปดาห์ที่ ${d.week}`).join(" · ");
+  const title = CUR === "home"
+    ? `${plain(C.acronym)} · ${U("งานประชุมวิชาการ", "Mini-Conference")} ${K.code} ${K.instituteShort}`
+    : `${pageName(CUR)} · ${plain(C.acronym)}`;
+  const ticker = D.dates.map((d) => `${L(d.title)} ${U("สัปดาห์ที่", "week")} ${d.week}`).join(" · ");
   return `<!DOCTYPE html>
-<html lang="th">
+<html lang="${LANG}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="งานประชุมวิชาการของรายวิชา ${K.code} ${K.nameTh} ${K.facultyTh} ${K.instituteTh}">
+<meta name="description" content="${esc(U("งานประชุมวิชาการของรายวิชา", "Mini-conference of course"))} ${K.code} ${esc(L(K.name))} · ${esc(L(K.faculty))} · ${esc(L(K.institute))}">
 <meta name="theme-color" content="#22374D">
 <meta name="color-scheme" content="light">
+<link rel="alternate" hreflang="th" href="${href(CUR, "th")}">
+<link rel="alternate" hreflang="en" href="${href(CUR, "en")}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Niramit:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="${rel}/css/style.css">
+<link rel="stylesheet" href="${asset("css/style.css")}">
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
-<a class="skip-link" href="#main">ข้ามไปเนื้อหา</a>
+<a class="skip-link" href="#main">${U("ข้ามไปเนื้อหา", "Skip to content")}</a>
 
 <div class="topbar">
   <div class="container">
     ${icon("megaphone", 20)}
-    <div class="ticker">ประกาศ: ${esc(ticker)}</div>
+    <div class="ticker">${U("ประกาศ", "News")}: ${esc(ticker)}</div>
     <span class="code">${K.code}</span>
     <a href="${K.instituteUrl}" target="_blank" rel="noopener">cdti.ac.th ↗</a>
   </div>
@@ -134,13 +174,13 @@ function layout({ key, rel, body }) {
 
 <header class="site-header">
   <div class="container">
-    <a class="brand" href="${href("home", rel)}" aria-label="${esc(plain(C.acronym))} หน้าแรก">
-      <img class="brand-logo" src="${rel}/img/cdti-logo.svg" alt="${K.instituteTh}" width="469" height="108">
+    <a class="brand" href="${href("home")}" aria-label="${esc(plain(C.acronym))} ${U("หน้าแรก", "home")}">
+      <img class="brand-logo" src="${asset("img/cdti-logo.svg")}" alt="${esc(L(K.institute))}" width="469" height="108">
       <span class="brand-divider" aria-hidden="true"></span>
       <span class="brand-text"><span class="brand-name">${t(C.acronym)}</span><span class="brand-sub">${K.code} Seminar in CPE</span></span>
     </a>
-    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="เปิดเมนู">${icon("menu", 22)}</button>
-    ${navHtml(key, rel)}
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="${U("เปิดเมนู", "Open menu")}" data-label-open="${U("เปิดเมนู", "Open menu")}" data-label-close="${U("ปิดเมนู", "Close menu")}">${icon("menu", 22)}</button>
+    ${navHtml()}
   </div>
 </header>
 
@@ -152,181 +192,180 @@ ${body}
   <div class="container">
     <div class="footer-grid">
       <div class="footer-about">
-        <a class="footer-logo" href="${K.instituteUrl}" target="_blank" rel="noopener"><img src="${rel}/img/cdti-logo.svg" alt="${K.instituteTh}" width="469" height="108" loading="lazy"></a>
+        <a class="footer-logo" href="${K.instituteUrl}" target="_blank" rel="noopener"><img src="${asset("img/cdti-logo.svg")}" alt="${esc(L(K.institute))}" width="469" height="108" loading="lazy"></a>
         <div class="footer-acr">${t(C.acronym)}</div>
-        <p>งานประชุมวิชาการของรายวิชา ${K.code} ${K.nameTh} ${K.facultyTh} ${K.instituteTh}</p>
+        <p>${U("งานประชุมวิชาการของรายวิชา", "The mini-conference of course")} ${K.code} ${esc(L(K.name))} · ${esc(L(K.faculty))} · ${esc(L(K.institute))}</p>
       </div>
-      <div><h2>งานประชุม</h2><ul>
-        <li><a href="${href("about", rel)}">กฎบัตรงานประชุม</a></li>
-        <li><a href="${href("committee", rel)}">คณะผู้จัดงาน</a></li>
-        <li><a href="${href("program", rel)}">กำหนดการ</a></li>
-        <li><a href="${href("archive", rel)}">งานที่ผ่านมา</a></li></ul></div>
-      <div><h2>สำหรับผู้เขียน</h2><ul>
-        <li><a href="${href("cfp", rel)}">ประกาศรับบทความ</a></li>
-        <li><a href="${href("submission", rel)}">การส่งบทความ</a></li>
-        <li><a href="${href("registration", rel)}">ลงทะเบียน</a></li></ul></div>
-      <div><h2>ติดต่อ</h2><ul>
-        <li><a href="${href("venue", rel)}">สถานที่จัดงาน</a></li>
-        <li><a href="${href("contact", rel)}">ติดต่อเรา</a></li>
-        <li><a href="${K.instituteUrl}" target="_blank" rel="noopener">${K.instituteTh} ↗</a></li></ul></div>
+      <div><h2>${U("งานประชุม", "Conference")}</h2><ul>
+        <li><a href="${href("about")}">${pageName("about")}</a></li>
+        <li><a href="${href("committee")}">${pageName("committee")}</a></li>
+        <li><a href="${href("program")}">${pageName("program")}</a></li>
+        <li><a href="${href("archive")}">${pageName("archive")}</a></li></ul></div>
+      <div><h2>${U("สำหรับผู้เขียน", "For Authors")}</h2><ul>
+        <li><a href="${href("cfp")}">${pageName("cfp")}</a></li>
+        <li><a href="${href("submission")}">${pageName("submission")}</a></li>
+        <li><a href="${href("registration")}">${pageName("registration")}</a></li></ul></div>
+      <div><h2>${U("ติดต่อ", "Contact")}</h2><ul>
+        <li><a href="${href("venue")}">${pageName("venue")}</a></li>
+        <li><a href="${href("contact")}">${pageName("contact")}</a></li>
+        <li><a href="${K.instituteUrl}" target="_blank" rel="noopener">${esc(L(K.institute))} ↗</a></li></ul></div>
     </div>
     <div class="footer-bottom">
-      <span>© ${K.year} ${K.code} ${K.nameTh} · ${K.instituteShort}</span>
-      <span>ภาพประกอบจาก Wikimedia Commons (สาธารณสมบัติ / CC0) · <a href="${href("contact", rel)}#credits">ที่มาของภาพ</a></span>
+      <span>© ${K.year} ${K.code} ${esc(L(K.name))} · ${K.instituteShort}</span>
+      <span>${U("ภาพประกอบจาก Wikimedia Commons (สาธารณสมบัติ / CC0)", "Photos from Wikimedia Commons (public domain / CC0)")} · <a href="${href("contact")}#credits">${U("ที่มาของภาพ", "Photo credits")}</a></span>
     </div>
   </div>
 </footer>
 
-<button class="to-top" type="button" aria-label="กลับขึ้นด้านบน">${icon("up", 22)}</button>
-<script src="${rel}/js/main.js" defer></script>
+<button class="to-top" type="button" aria-label="${U("กลับขึ้นด้านบน", "Back to top")}">${icon("up", 22)}</button>
+<script src="${asset("js/main.js")}" defer></script>
 </body>
 </html>
 `;
 }
 
 /* ---------- shared blocks ---------- */
-const sectionTitle = (th, sub, more, rel, moreLabel = "ดูทั้งหมด") => `
+const sectionTitle = (title, sub, more) => `
   <div class="section-title reveal">
-    <div><h2>${th}</h2>${sub ? `<p>${sub}</p>` : ""}</div>
-    ${more ? `<a class="more" href="${href(more, rel)}">${moreLabel} ${icon("arrow", 18)}</a>` : ""}
+    <div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div>
+    ${more ? `<a class="more" href="${href(more)}">${U("ดูทั้งหมด", "View all")} ${icon("arrow", 18)}</a>` : ""}
   </div>`;
 
-const pageHero = (key, rel, intro) => `
+const pageHero = (intro) => `
   <section class="page-hero">
-    ${img(PAGES[key].img, rel, { lazy: false, decorative: true })}
+    ${img(PAGES[CUR].img, { lazy: false, decorative: true })}
     <div class="container">
-      <nav class="crumbs" aria-label="เส้นทางนำทาง"><a href="${href("home", rel)}">หน้าแรก</a><span aria-hidden="true">/</span><span>${PAGES[key].th}</span></nav>
-      <h1>${PAGES[key].th}</h1>
+      <nav class="crumbs" aria-label="${U("เส้นทางนำทาง", "Breadcrumb")}"><a href="${href("home")}">${pageName("home")}</a><span aria-hidden="true">/</span><span>${pageName(CUR)}</span></nav>
+      <h1>${pageName(CUR)}</h1>
       ${intro ? `<p>${intro}</p>` : ""}
     </div>
   </section>`;
 
 // CDTI-style list rows with circle arrow buttons
-const dateRows = (rel) => `<ul class="rows">${join(D.dates, (d) => `
-  <li class="${d.key ? "key" : ""}"><a href="${href("cfp", rel)}">
-    <div class="row-num"><small>สัปดาห์</small><b>${d.week}</b></div>
-    <div class="row-text"><strong>${t(d.th)}</strong><span>${t(d.date)}</span></div>
+const dateRows = () => `<ul class="rows">${join(D.dates, (d) => `
+  <li class="${d.key ? "key" : ""}"><a href="${href("cfp")}">
+    <div class="row-num"><small>${U("สัปดาห์", "Week")}</small><b>${d.week}</b></div>
+    <div class="row-text"><strong>${t(d.title)}</strong><span>${t(d.date)}</span></div>
     <span class="circle-btn">${icon("arrow", 20, 2.2)}</span>
   </a></li>`)}</ul>`;
 
 const topicCards = () => `<div class="grid-3">${join(D.topics, (tp, i) => `
   <article class="card card-hover topic reveal">
-    <span class="track">กลุ่มที่ ${i + 1}</span>
+    <span class="track">${U("กลุ่มที่", "Track")} ${i + 1}</span>
     <div class="icon-tile">${icon(tp.icon, 24)}</div>
-    <h3>${t(tp.th)}</h3>
+    <h3>${t(tp.name)}</h3>
     <p>${t(tp.desc)}</p>
   </article>`)}</div>`;
 
 const programTabs = (idPrefix) => {
   const tabs = join(D.program, (p, i) =>
-    `<button class="tab" role="tab" id="${idPrefix}-tab-${i}" aria-controls="${idPrefix}-panel-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${p.th}</button>`);
+    `<button class="tab" role="tab" id="${idPrefix}-tab-${i}" aria-controls="${idPrefix}-panel-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${L(p.tab)}</button>`);
   const panels = join(D.program, (p, i) => `
     <div class="tab-panel" role="tabpanel" id="${idPrefix}-panel-${i}" aria-labelledby="${idPrefix}-tab-${i}"${i === 0 ? "" : " hidden"}>
       <ol class="timeline">${join(p.items, (it) => `
         <li class="timeline-item">
           <div class="timeline-time">${t(it.time)}</div>
           <div class="timeline-rail"><span></span></div>
-          <div class="timeline-body"><div><h3>${t(it.title)}</h3>${it.en ? `<p>${t(it.en)}</p>` : ""}</div><span class="tag ${it.type}">${({ oral: "บรรยาย", poster: "โปสเตอร์", talk: "พิธีการ", break: "พัก" })[it.type]}</span></div>
+          <div class="timeline-body"><div><h3>${t(it.title)}</h3>${it.note ? `<p>${t(it.note)}</p>` : ""}</div><span class="tag ${it.type}">${L(TAG[it.type])}</span></div>
         </li>`)}</ol>
     </div>`);
-  return `<div class="tabs" role="tablist" aria-label="ช่วงเวลา">${tabs}</div>${panels}`;
+  return `<div class="tabs" role="tablist" aria-label="${U("ช่วงเวลา", "Time of day")}">${tabs}</div>${panels}`;
 };
 
 const teamCard = (tm) => `
   <article class="card team reveal${tm.id === "chair" ? " is-chair" : ""}">
-    <h3>${t(tm.th)}</h3>
+    <h3>${t(tm.name)}</h3>
     <p>${t(tm.duty)}</p>
-    <div class="lead"><span>หัวหน้าทีม</span><span>${t(tm.lead)}</span></div>
+    <div class="lead"><span>${U("หัวหน้าทีม", "Team lead")}</span><span>${t(tm.lead)}</span></div>
   </article>`;
 
 const speakerCards = () => `<div class="stack">${join(D.keynotes, (k) => `
   <article class="card speaker reveal">
     <div class="avatar">${icon("user", 38)}</div>
-    <div><div class="label">วิทยากรรับเชิญ</div><h3>${t(k.name)}</h3><p>${t(k.affiliation)}</p><p>${t(k.talk)}</p></div>
+    <div><div class="label">${U("วิทยากรรับเชิญ", "Keynote speaker")}</div><h3>${t(k.name)}</h3><p>${t(k.affiliation)}</p><p>${t(k.talk)}</p></div>
   </article>`)}</div>`;
 
 const note = (html) => `<div class="note">${icon("info", 18)}<div>${html}</div></div>`;
 const kv = (rows) => `<div class="kv table-wrap">${join(rows, ([k, v]) => `<div>${k}</div><div>${v}</div>`)}</div>`;
 const contactList = () => `<ul class="info-list">
-  <li><span class="icon-tile">${icon("building", 22)}</span><div><div class="k">สถานที่</div><div class="v">${t(D.venue.name)}</div><div class="k">${t(D.venue.address)}</div></div></li>
-  <li><span class="icon-tile">${icon("calendar", 22)}</span><div><div class="k">วันจัดงาน</div><div class="v">${t(D.conference.date)}</div><div class="k">${t(D.conference.dateNote)}</div></div></li>
-  <li><span class="icon-tile">${icon("mail", 22)}</span><div><div class="k">อีเมล</div><div class="v">${t(D.contact.email)}</div></div></li>
-  <li><span class="icon-tile">${icon("phone", 22)}</span><div><div class="k">โทรศัพท์</div><div class="v">${t(D.contact.phone)}</div></div></li>
+  <li><span class="icon-tile">${icon("building", 22)}</span><div><div class="k">${U("สถานที่", "Venue")}</div><div class="v">${t(D.venue.name)}</div><div class="k">${t(D.venue.address)}</div></div></li>
+  <li><span class="icon-tile">${icon("calendar", 22)}</span><div><div class="k">${U("วันจัดงาน", "Date")}</div><div class="v">${t(D.conference.date)}</div><div class="k">${t(D.conference.dateNote)}</div></div></li>
+  <li><span class="icon-tile">${icon("mail", 22)}</span><div><div class="k">${U("อีเมล", "Email")}</div><div class="v">${t(D.contact.email)}</div></div></li>
+  <li><span class="icon-tile">${icon("phone", 22)}</span><div><div class="k">${U("โทรศัพท์", "Phone")}</div><div class="v">${t(D.contact.phone)}</div></div></li>
 </ul>`;
 
 /* ---------- home ---------- */
 function home() {
-  const rel = ".", C = D.conference;
+  const C = D.conference;
   const quick = [
-    ["submission", "pencil", "ส่งบทความ"],
-    ["cfp", "grid", "หัวข้อที่เปิดรับ"],
-    ["program", "clock", "กำหนดการ"],
-    ["committee", "users", "ทีมผู้จัดงาน"],
-    ["registration", "clipboard", "ลงทะเบียน"]
+    ["submission", "pencil", U("ส่งบทความ", "Submit Paper")],
+    ["cfp", "grid", U("หัวข้อที่เปิดรับ", "Topics")],
+    ["program", "clock", pageName("program")],
+    ["committee", "users", U("ทีมผู้จัดงาน", "Committee")],
+    ["registration", "clipboard", pageName("registration")]
   ];
   const paths = [
-    ["submission", "research", "file", "ส่งบทความ", "เทมเพลตและขั้นตอนการส่ง"],
-    ["cfp", "poster", "presentation", "นำเสนอผลงาน", "บรรยาย 4 เรื่อง · โปสเตอร์ 10 เรื่อง"],
-    ["program", "panel", "mic", "กำหนดการวันงาน", "วิทยากรและช่วงการนำเสนอ"]
+    ["submission", "research", "file", U("ส่งบทความ", "Submit a Paper"), U("เทมเพลตและขั้นตอนการส่ง", "Templates and how to submit")],
+    ["cfp", "poster", "presentation", U("นำเสนอผลงาน", "Present Your Work"), U("บรรยาย 4 เรื่อง · โปสเตอร์ 10 เรื่อง", "4 oral · 10 poster presentations")],
+    ["program", "panel", "mic", U("กำหนดการวันงาน", "Conference Program"), U("วิทยากรและช่วงการนำเสนอ", "Keynotes and sessions")]
   ];
-  return layout({
-    key: "home", rel, body: `
+  return layout(`
 <section class="hero" id="top">
-  ${img("hero", rel, { cls: "hero-img", lazy: false, decorative: true })}
+  ${img("hero", { cls: "hero-img", lazy: false, decorative: true })}
   <div class="container">
-    <span class="status"><span class="status-dot" aria-hidden="true"></span>${esc(C.status)}</span>
-    <h1>${t(C.nameTh)}</h1>
+    <span class="status"><span class="status-dot" aria-hidden="true"></span>${t(C.status)}</span>
+    <h1>${t(C.name)}</h1>
     <div class="acr">${t(C.acronym)}</div>
     <div class="flourish" aria-hidden="true"><span></span></div>
-    <p class="theme">ธีม: ${t(C.themeTh)}</p>
+    <p class="theme">${U("ธีม", "Theme")}: ${t(C.theme)}</p>
     <div class="meta">
       <span>${icon("calendar", 18)}${t(C.date)} · ${t(C.dateNote)}</span>
       <span>${icon("pin", 18)}${t(C.venue)} · ${t(C.venueNote)}</span>
       <span>${icon("mic", 18)}${t(C.format)}</span>
     </div>
     <div class="btn-row">
-      <a class="btn btn-cdti" href="${href("submission", rel)}">ส่งบทความ ${icon("arrow", 20, 2.2)}</a>
-      <a class="btn btn-outline-light" href="${href("cfp", rel)}">ประกาศรับบทความ</a>
+      <a class="btn btn-cdti" href="${href("submission")}">${U("ส่งบทความ", "Submit Paper")} ${icon("arrow", 20, 2.2)}</a>
+      <a class="btn btn-outline-light" href="${href("cfp")}">${pageName("cfp")}</a>
     </div>
   </div>
 </section>
 
 <div class="quick">
   <div class="container">
-    <nav class="quick-card" aria-label="ทางลัด">${join(quick, ([k, ic, label]) => `
-      <a href="${href(k, rel)}"><span class="quick-icon">${icon(ic, 34, 1.6)}</span><span>${label}</span></a>`)}
+    <nav class="quick-card" aria-label="${U("ทางลัด", "Quick links")}">${join(quick, ([k, ic, label]) => `
+      <a href="${href(k)}"><span class="quick-icon">${icon(ic, 34, 1.6)}</span><span>${label}</span></a>`)}
     </nav>
   </div>
 </div>
 
-<nav class="section-nav" aria-label="ส่วนต่าง ๆ ในหน้านี้">
+<nav class="section-nav" aria-label="${U("ส่วนต่าง ๆ ในหน้านี้", "On this page")}">
   <div class="container"><ul>
-    <li><a href="#news">ประกาศและกำหนดการสำคัญ</a></li>
-    <li><a href="#authors">สำหรับผู้เขียน</a></li>
-    <li><a href="#topics">หัวข้อ</a></li>
-    <li><a href="#keynotes">วิทยากร</a></li>
-    <li><a href="#program">กำหนดการวันงาน</a></li>
-    <li><a href="#committee">ทีมผู้จัดงาน</a></li>
-    <li><a href="#venue">สถานที่และติดต่อ</a></li>
+    <li><a href="#news">${U("ประกาศและกำหนดการสำคัญ", "News & Important Dates")}</a></li>
+    <li><a href="#authors">${U("สำหรับผู้เขียน", "For Authors")}</a></li>
+    <li><a href="#topics">${U("หัวข้อ", "Topics")}</a></li>
+    <li><a href="#keynotes">${U("วิทยากร", "Keynotes")}</a></li>
+    <li><a href="#program">${U("กำหนดการวันงาน", "Program")}</a></li>
+    <li><a href="#committee">${U("ทีมผู้จัดงาน", "Committee")}</a></li>
+    <li><a href="#venue">${U("สถานที่และติดต่อ", "Venue & Contact")}</a></li>
   </ul></div>
 </nav>
 
 <section class="section" id="news">
   <div class="container">
-    ${sectionTitle("ประกาศและกำหนดการสำคัญ", "วันที่จริงจะประกาศเมื่อทีมตกลงกันแล้ว ตอนนี้อ้างอิงตามสัปดาห์ของภาคเรียน")}
+    ${sectionTitle(U("ประกาศและกำหนดการสำคัญ", "News & Important Dates"), U("วันที่จริงจะประกาศเมื่อทีมตกลงกันแล้ว ตอนนี้อ้างอิงตามสัปดาห์ของภาคเรียน", "Exact dates will be announced once the team agrees on them. For now they follow the semester weeks."))}
     <div class="news">
-      <a class="feature reveal" href="${href("cfp", rel)}">
-        ${img("poster", rel)}
+      <a class="feature reveal" href="${href("cfp")}">
+        ${img("poster")}
         <div class="feature-body">
-          <span class="tag">ประกาศ</span>
-          <h3>ประกาศรับบทความ ${t(C.acronym)}</h3>
-          <p>เปิดรับบทความด้านวิศวกรรมคอมพิวเตอร์ใน ${D.topics.length} กลุ่มหัวข้อ นำเสนอแบบบรรยาย 4 เรื่อง และโปสเตอร์ 10 เรื่อง</p>
-          <div class="date">สัปดาห์ที่ 3 · ${t(D.dates[0].date)}</div>
+          <span class="tag">${U("ประกาศ", "News")}</span>
+          <h3>${U("ประกาศรับบทความ", "Call for Papers:")} ${t(C.acronym)}</h3>
+          <p>${U(`เปิดรับบทความด้านวิศวกรรมคอมพิวเตอร์ใน ${D.topics.length} กลุ่มหัวข้อ นำเสนอแบบบรรยาย 4 เรื่อง และโปสเตอร์ 10 เรื่อง`, `We invite computer engineering papers in ${D.topics.length} topic tracks: 4 oral and 10 poster presentations.`)}</p>
+          <div class="date">${U("สัปดาห์ที่", "Week")} 3 · ${t(D.dates[0].date)}</div>
         </div>
       </a>
       <div class="reveal">
-        ${dateRows(rel)}
-        <div class="news-actions"><a class="btn btn-cdti" href="${href("cfp", rel)}">ดูทั้งหมด ${icon("arrow", 20, 2.2)}</a></div>
+        ${dateRows()}
+        <div class="news-actions"><a class="btn btn-cdti" href="${href("cfp")}">${U("ดูทั้งหมด", "View all")} ${icon("arrow", 20, 2.2)}</a></div>
       </div>
     </div>
   </div>
@@ -334,29 +373,29 @@ function home() {
 
 <section class="section dark" id="authors">
   <div class="container">
-    ${sectionTitle("สำหรับผู้เขียน", "ทุกอย่างที่ต้องรู้ ตั้งแต่ส่งบทความจนถึงวันนำเสนอ")}
+    ${sectionTitle(U("สำหรับผู้เขียน", "For Authors"), U("ทุกอย่างที่ต้องรู้ ตั้งแต่ส่งบทความจนถึงวันนำเสนอ", "Everything you need, from submission to presentation day"))}
     <div class="grid-3">${join(paths, ([k, im, ic, h, p]) => `
-      <a class="photo-card reveal" href="${href(k, rel)}">
-        ${img(im, rel)}
+      <a class="photo-card reveal" href="${href(k)}">
+        ${img(im)}
         <div class="band"><span class="badge">${icon(ic, 44, 1.5)}</span><h3>${h}</h3><p>${p}</p></div>
       </a>`)}
     </div>
-    <div class="stats">${join(D.stats, (s) => `<div class="stat reveal"><b>${s.value}</b><span>${s.th}</span></div>`)}</div>
+    <div class="stats">${join(D.stats, (s) => `<div class="stat reveal"><b>${s.value}</b><span>${L(s.label)}</span></div>`)}</div>
   </div>
 </section>
 
 <section class="section" id="topics">
   <div class="container">
-    ${sectionTitle("หัวข้อที่เปิดรับ", `บทความด้านวิศวกรรมคอมพิวเตอร์ใน ${D.topics.length} กลุ่มหัวข้อ`, "cfp", rel)}
+    ${sectionTitle(U("หัวข้อที่เปิดรับ", "Topics"), U(`บทความด้านวิศวกรรมคอมพิวเตอร์ใน ${D.topics.length} กลุ่มหัวข้อ`, `Computer engineering papers in ${D.topics.length} tracks`), "cfp")}
     ${topicCards()}
   </div>
 </section>
 
 <section class="section white" id="keynotes">
   <div class="container">
-    ${sectionTitle("วิทยากรรับเชิญ", "", "program", rel)}
+    ${sectionTitle(U("วิทยากรรับเชิญ", "Keynote Speakers"), "", "program")}
     <div class="media-split">
-      ${img("panel", rel, { cls: "reveal" })}
+      ${img("panel", { cls: "reveal" })}
       ${speakerCards()}
     </div>
   </div>
@@ -364,140 +403,140 @@ function home() {
 
 <section class="section" id="program">
   <div class="container">
-    ${sectionTitle("กำหนดการวันงาน", "เวลาจะยืนยันหลังประชุมคณะกรรมการวิชาการในสัปดาห์ที่ 7", "program", rel)}
+    ${sectionTitle(U("กำหนดการวันงาน", "Conference Program"), U("เวลาจะยืนยันหลังประชุมคณะกรรมการวิชาการในสัปดาห์ที่ 7", "Times will be confirmed after the program committee meets in week 7."), "program")}
     <div class="reveal">${programTabs("home")}</div>
   </div>
 </section>
 
 <section class="section white" id="committee">
   <div class="container">
-    ${sectionTitle("ทีมผู้จัดงาน", "นักศึกษาทุกคนเป็นทั้งผู้เขียน ผู้พิจารณาบทความ และผู้จัดงาน", "committee", rel)}
+    ${sectionTitle(U("ทีมผู้จัดงาน", "Organizing Committee"), U("นักศึกษาทุกคนเป็นทั้งผู้เขียน ผู้พิจารณาบทความ และผู้จัดงาน", "Every student is an author, a reviewer and an organizer."), "committee")}
     <div class="grid-3">${join(D.teams, teamCard)}</div>
   </div>
 </section>
 
 <section class="section" id="venue">
   <div class="container">
-    ${sectionTitle("สถานที่และการติดต่อ", "", "venue", rel)}
+    ${sectionTitle(U("สถานที่และการติดต่อ", "Venue & Contact"), "", "venue")}
     <div class="grid-2">
       <div class="card reveal">${contactList()}</div>
-      <div class="venue-img reveal">${img("hero", rel)}<span class="cap">ห้องจัดงานจะประกาศเมื่อยืนยันแล้ว (ภาพประกอบ)</span></div>
+      <div class="venue-img reveal">${img("hero")}<span class="cap">${U("ห้องจัดงานจะประกาศเมื่อยืนยันแล้ว (ภาพประกอบ)", "The room will be announced once confirmed (illustration)")}</span></div>
     </div>
   </div>
-</section>`
-  });
+</section>`);
 }
 
 /* ---------- sub-pages ---------- */
-function subpage(key, intro, sections, opts = {}) {
-  const rel = "..";
+function subpage(intro, sections, opts = {}) {
   const toc = sections.filter((s) => s.id && s.title);
   const body = `
-${pageHero(key, rel, intro)}
+${pageHero(intro)}
 <div class="page-body"><div class="container">
   <div class="page-layout${opts.wide ? " wide" : ""}">
-    ${opts.wide ? "" : `<aside class="page-toc" aria-label="ในหน้านี้">${toc.length > 1 ? `<strong>ในหน้านี้</strong>${join(toc, (s) => `<a href="#${s.id}">${s.title}</a>`)}` : `<strong>${PAGES[key].th}</strong><a href="${href("home", rel)}">กลับหน้าแรก</a>`}</aside>`}
+    ${opts.wide ? "" : `<aside class="page-toc" aria-label="${U("ในหน้านี้", "On this page")}">${toc.length > 1 ? `<strong>${U("ในหน้านี้", "On this page")}</strong>${join(toc, (s) => `<a href="#${s.id}">${s.title}</a>`)}` : `<strong>${pageName(CUR)}</strong><a href="${href("home")}">${U("กลับหน้าแรก", "Back to home")}</a>`}</aside>`}
     <div class="page-main">${join(sections, (s) => `
       <section class="block${s.bare ? " bare" : ""}"${s.id ? ` id="${s.id}"` : ""}>${s.title ? `<h2>${s.title}</h2>` : ""}${s.lead ? `<p class="lead-text">${s.lead}</p>` : ""}${s.html}</section>`)}
     </div>
   </div>
 </div></div>`;
-  return layout({ key, rel, body });
+  return layout(body);
 }
 
 const pages = {
   about: () => {
     const C = D.conference;
-    return subpage("about", "สรุปสิ่งที่ทีมตกลงกันแล้วและสิ่งที่ต้องทำต่อ สำหรับงานประชุมวิชาการของรายวิชา 300-1412", [
-      { id: "objective", title: "เป้าหมาย", html: `<p>ให้นักศึกษาเห็นภาพรวมของการจัดงานประชุมวิชาการ และได้ลองทำหน้าที่ผู้จัดงานจริง ตั้งแต่เปิดรับบทความจนถึงวันนำเสนอ</p>
-        <ul class="steps" style="margin-top:16px"><li>เขียนบทความของตัวเอง</li><li>พิจารณาบทความของเพื่อน</li><li>ร่วมตัดสินผล</li><li>จัดงาน</li><li>นำเสนองาน</li></ul>` },
-      { id: "identity", title: "อัตลักษณ์ของงาน", lead: "ช่องสีจางคือส่วนที่ทีมยังต้องตัดสินใจ", html: kv([
-        ["ชื่องาน", `${t(C.nameTh)}<br>${t(C.nameEn)} (ชื่อภาษาอังกฤษ)`], ["ชื่อย่อ", t(C.acronym)], ["ธีม", t(C.themeTh)],
-        ["ขอบเขต", `${D.topics.length} กลุ่มหัวข้อ · <a href="${href("cfp", "..")}">ดูรายละเอียด</a>`], ["กลุ่มเป้าหมาย", t(C.audience)],
-        ["วันและสถานที่", `${t(C.date)} · ${t(C.venue)}`], ["อัตลักษณ์ภาพ", "สีน้ำเงินเข้ม น้ำเงินเทา และเหลือง ตามเว็บสถาบัน CDTI"]]) },
-      { id: "workflow", title: "ขั้นตอนของงาน", html: `<ol class="steps">${join(D.workflow, (w) => `<li>${esc(w)}</li>`)}</ol>` },
-      { id: "roadmap", title: "แผนงาน 9 สัปดาห์", lead: "จากวางแผนถึงวันจัดงาน", html: `<div class="table-wrap"><table>
-        <thead><tr><th>สัปดาห์</th><th>งานหลัก</th><th>สถานะ</th></tr></thead>
-        <tbody>${join(D.roadmap, (r) => `<tr${r.done ? ' class="is-done"' : ""}><td class="num">${r.week}</td><td>${esc(r.th)}</td><td>${r.done ? '<span class="check">✓ เสร็จแล้ว</span>' : '<span class="ph">—</span>'}</td></tr>`)}</tbody>
+    return subpage(U("สรุปสิ่งที่ทีมตกลงกันแล้วและสิ่งที่ต้องทำต่อ สำหรับงานประชุมวิชาการของรายวิชา 300-1412", "What the team has agreed on so far, and what is still to do, for the 300-1412 mini-conference."), [
+      { id: "objective", title: U("เป้าหมาย", "Objective"), html: `<p>${U("ให้นักศึกษาเห็นภาพรวมของการจัดงานประชุมวิชาการ และได้ลองทำหน้าที่ผู้จัดงานจริง ตั้งแต่เปิดรับบทความจนถึงวันนำเสนอ", "Help students see the whole picture of running an academic conference and take on the organizer role themselves, from the call for papers to presentation day.")}</p>
+        <ul class="steps" style="margin-top:16px">${join(U(["เขียนบทความของตัวเอง", "พิจารณาบทความของเพื่อน", "ร่วมตัดสินผล", "จัดงาน", "นำเสนองาน"], ["Write your own paper", "Review other papers", "Take part in decisions", "Organize the event", "Present your research"]), (x) => `<li>${x}</li>`)}</ul>` },
+      { id: "identity", title: U("อัตลักษณ์ของงาน", "Conference Identity"), lead: U("ช่องสีจางคือส่วนที่ทีมยังต้องตัดสินใจ", "Faded fields are still to be decided by the team."), html: kv([
+        [U("ชื่องาน (ไทย)", "Name (Thai)"), t(C.name.th)], [U("ชื่องาน (อังกฤษ)", "Name (English)"), t(C.name.en)], [U("ชื่อย่อ", "Acronym"), t(C.acronym)], [U("ธีม", "Theme"), t(C.theme)],
+        [U("ขอบเขต", "Scope"), `${U(`${D.topics.length} กลุ่มหัวข้อ`, `${D.topics.length} tracks`)} · <a href="${href("cfp")}">${U("ดูรายละเอียด", "Details")}</a>`], [U("กลุ่มเป้าหมาย", "Audience"), t(C.audience)],
+        [U("วันและสถานที่", "Date & venue"), `${t(C.date)} · ${t(C.venue)}`], [U("อัตลักษณ์ภาพ", "Visual identity"), U("สีน้ำเงินเข้ม น้ำเงินเทา และเหลือง ตามเว็บสถาบัน CDTI", "Navy, slate blue and yellow, following the CDTI website")]]) },
+      { id: "workflow", title: U("ขั้นตอนของงาน", "Conference Workflow"), html: `<ol class="steps">${join(D.workflow, (w) => `<li>${esc(L(w))}</li>`)}</ol>` },
+      { id: "roadmap", title: U("แผนงาน 9 สัปดาห์", "9-Week Roadmap"), lead: U("จากวางแผนถึงวันจัดงาน", "From planning to conference day"), html: `<div class="table-wrap"><table>
+        <thead><tr><th>${U("สัปดาห์", "Week")}</th><th>${U("งานหลัก", "Milestone")}</th><th>${U("สถานะ", "Status")}</th></tr></thead>
+        <tbody>${join(D.roadmap, (r) => `<tr${r.done ? ' class="is-done"' : ""}><td class="num">${r.week}</td><td>${esc(L(r.title))}</td><td>${r.done ? `<span class="check">✓ ${U("เสร็จแล้ว", "Done")}</span>` : '<span class="ph">—</span>'}</td></tr>`)}</tbody>
       </table></div>` },
-      { id: "deliverables", title: "สิ่งที่ต้องส่งในสัปดาห์ที่ 1", html: `<div class="grid-3">${join([["file", "กฎบัตรงานประชุม", "เอกสารหน้านี้"], ["users", "ผังองค์กร", `<a href="${href("committee", "..")}">หน้าคณะผู้จัดงาน</a>`], ["calendar", "ไทม์ไลน์เบื้องต้น", "ตารางด้านบน"]], ([ic, h, p]) =>
+      { id: "deliverables", title: U("สิ่งที่ต้องส่งในสัปดาห์ที่ 1", "Week 1 Deliverables"), html: `<div class="grid-3">${join([
+        ["file", U("กฎบัตรงานประชุม", "Conference Charter"), U("เอกสารหน้านี้", "This page")],
+        ["users", U("ผังองค์กร", "Organization Chart"), `<a href="${href("committee")}">${pageName("committee")}</a>`],
+        ["calendar", U("ไทม์ไลน์เบื้องต้น", "Initial Timeline"), U("ตารางด้านบน", "The table above")]], ([ic, h, p]) =>
         `<div class="card"><div class="icon-tile">${icon(ic, 24)}</div><h3 style="font-size:18px;margin-top:14px">${h}</h3><p style="color:var(--muted);font-size:16px">${p}</p></div>`)}</div>` }
     ]);
   },
 
   committee: () => {
     const chair = D.teams[0], rest = D.teams.slice(1);
-    return subpage("committee", "ทุกทีมต้องมีหัวหน้า สมาชิก และงานที่ต้องส่งชัดเจน ใส่ชื่อแทน “---” เมื่อแบ่งทีมเสร็จ", [
-      { id: "chart", title: "ผังองค์กร", html: `<div class="org">${teamCard(chair)}<div class="org-line" aria-hidden="true"></div><div class="org-row">${join(rest, teamCard)}</div></div>` },
-      { id: "members", title: "สมาชิกแต่ละทีม", html: `<div class="accordion">${join(D.teams, (tm, i) => `
-        <details${i === 0 ? " open" : ""}><summary><span>${esc(tm.th)}<small>${esc(tm.duty)}</small></span>${icon("chevron", 20)}</summary>
-        <div class="acc-body"><ul class="member-list"><li><span>หัวหน้าทีม</span><span>${t(tm.lead)}</span></li>${join(tm.members, (m) => `<li><span>สมาชิก</span><span>${t(m)}</span></li>`)}</ul></div></details>`)}</div>` },
-      { id: "advisors", title: "อาจารย์ประจำวิชา", html: `<div class="grid-2">${join(D.course.instructors, (n) => `<div class="card speaker"><div class="avatar sm">${icon("user", 26)}</div><div><h3 style="font-size:18px">${esc(n)}</h3><p>${D.course.facultyTh}</p></div></div>`)}</div>` }
+    return subpage(U("ทุกทีมต้องมีหัวหน้า สมาชิก และงานที่ต้องส่งชัดเจน ใส่ชื่อแทน “---” เมื่อแบ่งทีมเสร็จ", "Every team needs a lead, members and clear deliverables. Names replace “---” once teams are set."), [
+      { id: "chart", title: U("ผังองค์กร", "Organization Chart"), html: `<div class="org">${teamCard(chair)}<div class="org-line" aria-hidden="true"></div><div class="org-row">${join(rest, teamCard)}</div></div>` },
+      { id: "members", title: U("สมาชิกแต่ละทีม", "Team Members"), html: `<div class="accordion">${join(D.teams, (tm, i) => `
+        <details${i === 0 ? " open" : ""}><summary><span>${esc(L(tm.name))}<small>${esc(L(tm.duty))}</small></span>${icon("chevron", 20)}</summary>
+        <div class="acc-body"><ul class="member-list"><li><span>${U("หัวหน้าทีม", "Team lead")}</span><span>${t(tm.lead)}</span></li>${join(tm.members, (m) => `<li><span>${U("สมาชิก", "Member")}</span><span>${t(m)}</span></li>`)}</ul></div></details>`)}</div>` },
+      { id: "advisors", title: U("อาจารย์ประจำวิชา", "Course Instructors"), html: `<div class="grid-2">${join(D.course.instructors, (n) => `<div class="card speaker"><div class="avatar sm">${icon("user", 26)}</div><div><h3 style="font-size:18px">${esc(n)}</h3><p>${esc(L(D.course.faculty))}</p></div></div>`)}</div>` }
     ], { wide: true });
   },
 
-  archive: () => subpage("archive", "", [
-    { html: `<div class="empty"><div class="icon-tile">${icon("archive", 30)}</div><h2 style="border:0;margin:0;padding:0">ยังไม่มีงานที่ผ่านมา</h2><p>งานนี้เป็นงานประชุมวิชาการครั้งแรกของรายวิชา งานปีถัดไปจะแสดงที่หน้านี้</p></div>` }
+  archive: () => subpage("", [
+    { html: `<div class="empty"><div class="icon-tile">${icon("archive", 30)}</div><h2 style="border:0;margin:0;padding:0">${U("ยังไม่มีงานที่ผ่านมา", "No past conferences yet")}</h2><p>${U("งานนี้เป็นงานประชุมวิชาการครั้งแรกของรายวิชา งานปีถัดไปจะแสดงที่หน้านี้", "This is the course's first mini-conference. Future editions will be listed here.")}</p></div>` }
   ]),
 
   cfp: () => {
     const C = D.conference;
-    return subpage("cfp", "เชิญส่งบทความวิจัยด้านวิศวกรรมคอมพิวเตอร์ ประกาศฉบับนี้เป็นร่างแรกและจะอัปเดตในสัปดาห์ที่ 3", [
-      { id: "theme", title: "ธีมของงาน", html: `<p style="font-size:20px;font-weight:600;color:var(--navy)">${t(C.themeTh)}</p>` },
-      { id: "scope", title: "ขอบเขตหัวข้อ", lead: "ธีมบอกทิศทางกว้าง ๆ ส่วนขอบเขตบอกว่าบทความแบบไหนเข้าข่าย", html: topicCards() },
-      { id: "fit", title: "บทความแบบไหนเข้าข่าย", html: note(`ต้องมีส่วนที่เป็นงานด้านเทคนิค เช่น ออกแบบ พัฒนา หรือทดลองระบบ ส่วนงานวิเคราะห์ธุรกิจที่ไม่มีการพัฒนาทางเทคนิค <span class="ph">[คณะกรรมการวิชาการกำลังพิจารณา]</span>`) },
-      { id: "dates", title: "กำหนดการสำคัญ", html: dateRows("..") },
-      { id: "types", title: "รูปแบบการนำเสนอ", html: `<div class="grid-2">
-        <div class="card"><span class="tag oral">บรรยาย</span><h3 style="margin-top:12px">นำเสนอแบบบรรยาย 4 บทความ</h3><p style="color:var(--muted)">เวลานำเสนอ <span class="ph">รอประกาศ</span></p></div>
-        <div class="card"><span class="tag poster">โปสเตอร์</span><h3 style="margin-top:12px">นำเสนอแบบโปสเตอร์ 10 บทความ</h3><p style="color:var(--muted)">ขนาดโปสเตอร์ <span class="ph">รอประกาศ</span></p></div></div>` },
-      { bare: true, html: `<a class="btn btn-cdti" href="${href("submission", "..")}">วิธีส่งบทความ ${icon("arrow", 20, 2.2)}</a>` }
+    return subpage(U("เชิญส่งบทความวิจัยด้านวิศวกรรมคอมพิวเตอร์ ประกาศฉบับนี้เป็นร่างแรกและจะอัปเดตในสัปดาห์ที่ 3", "We invite research papers in computer engineering. This is a first draft and will be updated in week 3."), [
+      { id: "theme", title: U("ธีมของงาน", "Theme"), html: `<p style="font-size:20px;font-weight:600;color:var(--navy)">${t(C.theme)}</p>` },
+      { id: "scope", title: U("ขอบเขตหัวข้อ", "Scope"), lead: U("ธีมบอกทิศทางกว้าง ๆ ส่วนขอบเขตบอกว่าบทความแบบไหนเข้าข่าย", "The theme sets the direction; the scope says which papers belong."), html: topicCards() },
+      { id: "fit", title: U("บทความแบบไหนเข้าข่าย", "What Fits"), html: note(U(`ต้องมีส่วนที่เป็นงานด้านเทคนิค เช่น ออกแบบ พัฒนา หรือทดลองระบบ ส่วนงานวิเคราะห์ธุรกิจที่ไม่มีการพัฒนาทางเทคนิค <span class="ph">[คณะกรรมการวิชาการกำลังพิจารณา]</span>`, `Papers need a technical part, such as designing, building or testing a system. Business analysis with no technical work: <span class="ph">[under discussion by the program committee]</span>`)) },
+      { id: "dates", title: U("กำหนดการสำคัญ", "Important Dates"), html: dateRows() },
+      { id: "types", title: U("รูปแบบการนำเสนอ", "Presentation Formats"), html: `<div class="grid-2">
+        <div class="card"><span class="tag oral">${L(TAG.oral)}</span><h3 style="margin-top:12px">${U("นำเสนอแบบบรรยาย 4 บทความ", "4 oral presentations")}</h3><p style="color:var(--muted)">${U("เวลานำเสนอ", "Talk length")} ${t({ th: "รอประกาศ", en: "TBA" })}</p></div>
+        <div class="card"><span class="tag poster">${L(TAG.poster)}</span><h3 style="margin-top:12px">${U("นำเสนอแบบโปสเตอร์ 10 บทความ", "10 poster presentations")}</h3><p style="color:var(--muted)">${U("ขนาดโปสเตอร์", "Poster size")} ${t({ th: "รอประกาศ", en: "TBA" })}</p></div></div>` },
+      { bare: true, html: `<a class="btn btn-cdti" href="${href("submission")}">${U("วิธีส่งบทความ", "How to submit")} ${icon("arrow", 20, 2.2)}</a>` }
     ]);
   },
 
   submission: () => {
     const S = D.submission;
-    return subpage("submission", "รูปแบบบทความ เทมเพลต และช่องทางส่งบทความ", [
-      { id: "system", title: "ระบบส่งบทความ", html: `${note(esc(S.systemNote))}<p style="margin-top:16px"><a class="btn btn-cdti" aria-disabled="true" tabindex="-1">ไปที่ระบบส่งบทความ</a></p>` },
-      { id: "format", title: "รูปแบบบทความ", html: kv([["ความยาว", t(S.length)], ["ภาษา", t(S.language)], ["การพิจารณา", t(S.review)], ["ไฟล์ที่ส่ง", "PDF"]]) },
-      { id: "templates", title: "เทมเพลต", html: `<div class="grid-2">${join(S.templates, (tp) => `<div class="card speaker"><div class="icon-tile">${icon("file", 24)}</div><div style="flex:1"><h3 style="font-size:18px">${esc(tp.label)}</h3><p>${tp.file ? `<a href="${esc(tp.file)}">ดาวน์โหลด</a>` : '<span class="ph">เร็ว ๆ นี้</span>'}</p></div></div>`)}</div>` },
-      { id: "steps", title: "ขั้นตอน", html: `<ol class="steps"><li>เขียนบทความตามเทมเพลต</li><li>ส่งผ่านระบบ</li><li>รอผลการพิจารณา</li><li>แก้ไขตามความเห็น</li><li>ส่งฉบับสมบูรณ์</li></ol>` }
+    return subpage(U("รูปแบบบทความ เทมเพลต และช่องทางส่งบทความ", "Paper format, templates and where to submit."), [
+      { id: "system", title: U("ระบบส่งบทความ", "Submission System"), html: `${note(esc(L(S.systemNote)))}<p style="margin-top:16px"><a class="btn btn-cdti" aria-disabled="true" tabindex="-1">${U("ไปที่ระบบส่งบทความ", "Go to submission system")}</a></p>` },
+      { id: "format", title: U("รูปแบบบทความ", "Paper Format"), html: kv([[U("ความยาว", "Length"), t(S.length)], [U("ภาษา", "Language"), t(S.language)], [U("การพิจารณา", "Review"), t(S.review)], [U("ไฟล์ที่ส่ง", "File type"), "PDF"]]) },
+      { id: "templates", title: U("เทมเพลต", "Templates"), html: `<div class="grid-2">${join(S.templates, (tp) => `<div class="card speaker"><div class="icon-tile">${icon("file", 24)}</div><div style="flex:1"><h3 style="font-size:18px">${esc(L(tp.label))}</h3><p>${tp.file ? `<a href="${esc(tp.file)}">${U("ดาวน์โหลด", "Download")}</a>` : `<span class="ph">${U("เร็ว ๆ นี้", "Coming soon")}</span>`}</p></div></div>`)}</div>` },
+      { id: "steps", title: U("ขั้นตอน", "Steps"), html: `<ol class="steps">${join(U(["เขียนบทความตามเทมเพลต", "ส่งผ่านระบบ", "รอผลการพิจารณา", "แก้ไขตามความเห็น", "ส่งฉบับสมบูรณ์"], ["Write using the template", "Submit online", "Wait for reviews", "Revise", "Send the camera-ready version"]), (x) => `<li>${x}</li>`)}</ol>` }
     ]);
   },
 
-  program: () => subpage("program", "กำหนดการวันงาน เวลาจริงจะยืนยันหลังประชุมคณะกรรมการวิชาการในสัปดาห์ที่ 7", [
-    { id: "schedule", title: "ตารางเวลา", html: programTabs("prog") },
-    { id: "keynotes", title: "วิทยากรรับเชิญ", html: speakerCards() },
-    { id: "sessions", title: "ช่วงการนำเสนอ", html: `<div class="table-wrap"><table><thead><tr><th>ช่วง</th><th>ประเภท</th><th>บทความ</th><th>ประธานช่วง</th></tr></thead><tbody>
-      <tr><td>บรรยาย ช่วงที่ 1</td><td><span class="tag oral">บรรยาย</span></td><td>2</td><td><span class="ph">---</span></td></tr>
-      <tr><td>บรรยาย ช่วงที่ 2</td><td><span class="tag oral">บรรยาย</span></td><td>2</td><td><span class="ph">---</span></td></tr>
-      <tr><td>โปสเตอร์</td><td><span class="tag poster">โปสเตอร์</span></td><td>10</td><td><span class="ph">---</span></td></tr></tbody></table></div>` }
+  program: () => subpage(U("กำหนดการวันงาน เวลาจริงจะยืนยันหลังประชุมคณะกรรมการวิชาการในสัปดาห์ที่ 7", "The conference day schedule. Times will be confirmed after the program committee meets in week 7."), [
+    { id: "schedule", title: U("ตารางเวลา", "Schedule"), html: programTabs("prog") },
+    { id: "keynotes", title: U("วิทยากรรับเชิญ", "Keynote Speakers"), html: speakerCards() },
+    { id: "sessions", title: U("ช่วงการนำเสนอ", "Sessions"), html: `<div class="table-wrap"><table><thead><tr><th>${U("ช่วง", "Session")}</th><th>${U("ประเภท", "Type")}</th><th>${U("บทความ", "Papers")}</th><th>${U("ประธานช่วง", "Chair")}</th></tr></thead><tbody>
+      <tr><td>${U("บรรยาย ช่วงที่ 1", "Oral session 1")}</td><td><span class="tag oral">${L(TAG.oral)}</span></td><td>2</td><td><span class="ph">---</span></td></tr>
+      <tr><td>${U("บรรยาย ช่วงที่ 2", "Oral session 2")}</td><td><span class="tag oral">${L(TAG.oral)}</span></td><td>2</td><td><span class="ph">---</span></td></tr>
+      <tr><td>${U("โปสเตอร์", "Poster session")}</td><td><span class="tag poster">${L(TAG.poster)}</span></td><td>10</td><td><span class="ph">---</span></td></tr></tbody></table></div>` }
   ]),
 
   registration: () => {
     const R = D.registration;
-    return subpage("registration", "ข้อมูลการลงทะเบียนเข้าร่วมงาน", [
-      { id: "types", title: "ประเภทผู้เข้าร่วม", html: `<div class="table-wrap"><table><thead><tr><th>ประเภท</th><th>รายละเอียด</th><th>ค่าลงทะเบียน</th></tr></thead><tbody>${join(R.types, (r) => `<tr><td><strong>${esc(r.th)}</strong></td><td>${t(r.detail)}</td><td>${t(R.fee)}</td></tr>`)}</tbody></table></div>` },
-      { id: "how", title: "วิธีลงทะเบียน", html: note(t(R.note)) }
+    return subpage(U("ข้อมูลการลงทะเบียนเข้าร่วมงาน", "How to register for the conference."), [
+      { id: "types", title: U("ประเภทผู้เข้าร่วม", "Participant Types"), html: `<div class="table-wrap"><table><thead><tr><th>${U("ประเภท", "Type")}</th><th>${U("รายละเอียด", "Details")}</th><th>${U("ค่าลงทะเบียน", "Fee")}</th></tr></thead><tbody>${join(R.types, (r) => `<tr><td><strong>${esc(L(r.name))}</strong></td><td>${t(r.detail)}</td><td>${t(R.fee)}</td></tr>`)}</tbody></table></div>` },
+      { id: "how", title: U("วิธีลงทะเบียน", "How to Register"), html: note(t(R.note)) }
     ]);
   },
 
-  venue: () => subpage("venue", "", [
-    { id: "place", title: "สถานที่", html: `<div class="grid-2"><div>${contactList()}</div>
-      <div class="venue-img">${img("hero", "..")}<span class="cap">ภาพประกอบ — รอยืนยันห้องจัดงาน</span></div></div>` },
-    { id: "travel", title: "การเดินทาง", html: note('<span class="ph">[ข้อมูลการเดินทางและที่จอดรถ — ทีมสถานที่และการจัดงาน]</span>') }
+  venue: () => subpage("", [
+    { id: "place", title: U("สถานที่", "Location"), html: `<div class="grid-2"><div>${contactList()}</div>
+      <div class="venue-img">${img("hero")}<span class="cap">${U("ภาพประกอบ — รอยืนยันห้องจัดงาน", "Illustration — room to be confirmed")}</span></div></div>` },
+    { id: "travel", title: U("การเดินทาง", "Getting There"), html: note(`<span class="ph">${U("[ข้อมูลการเดินทางและที่จอดรถ — ทีมสถานที่และการจัดงาน]", "[Travel and parking details — Venue & Logistics team]")}</span>`) }
   ]),
 
-  contact: () => subpage("contact", "", [
-    { id: "channels", title: "ช่องทางติดต่อ", html: `<ul class="info-list">
-      <li><span class="icon-tile">${icon("mail", 22)}</span><div><div class="k">อีเมล</div><div class="v">${t(D.contact.email)}</div></div></li>
-      <li><span class="icon-tile">${icon("phone", 22)}</span><div><div class="k">โทรศัพท์</div><div class="v">${t(D.contact.phone)}</div></div></li>
-      <li><span class="icon-tile">${icon("building", 22)}</span><div><div class="k">สำนักงาน</div><div class="v">${t(D.contact.office)}</div></div></li></ul>` },
-    { id: "teams", title: "ติดต่อตามเรื่อง", html: `<div class="table-wrap"><table><thead><tr><th>เรื่อง</th><th>ทีม</th><th>ผู้ติดต่อ</th></tr></thead><tbody>
-      <tr><td>การส่งบทความ / การพิจารณา</td><td>คณะกรรมการวิชาการ</td><td>${t(D.teams[1].lead)}</td></tr>
-      <tr><td>เว็บไซต์ / ลงทะเบียน</td><td>ทีมเว็บไซต์และลงทะเบียน</td><td>${t(D.teams[3].lead)}</td></tr>
-      <tr><td>สถานที่ / อุปกรณ์</td><td>ทีมสถานที่และการจัดงาน</td><td>${t(D.teams[5].lead)}</td></tr>
-      <tr><td>เรื่องอื่น ๆ</td><td>ประธานจัดงาน</td><td>${t(D.teams[0].lead)}</td></tr></tbody></table></div>` },
-    { id: "credits", title: "ที่มาของภาพประกอบ", html: `<ul class="member-list">${join(Object.values(IMG), (im) => `<li><span>${esc(im.credit)}</span><a href="${esc(im.source)}" target="_blank" rel="noopener">ที่มา ↗</a></li>`)}</ul>` }
+  contact: () => subpage("", [
+    { id: "channels", title: U("ช่องทางติดต่อ", "Contact Details"), html: `<ul class="info-list">
+      <li><span class="icon-tile">${icon("mail", 22)}</span><div><div class="k">${U("อีเมล", "Email")}</div><div class="v">${t(D.contact.email)}</div></div></li>
+      <li><span class="icon-tile">${icon("phone", 22)}</span><div><div class="k">${U("โทรศัพท์", "Phone")}</div><div class="v">${t(D.contact.phone)}</div></div></li>
+      <li><span class="icon-tile">${icon("building", 22)}</span><div><div class="k">${U("สำนักงาน", "Office")}</div><div class="v">${t(D.contact.office)}</div></div></li></ul>` },
+    { id: "teams", title: U("ติดต่อตามเรื่อง", "Who to Contact"), html: `<div class="table-wrap"><table><thead><tr><th>${U("เรื่อง", "Topic")}</th><th>${U("ทีม", "Team")}</th><th>${U("ผู้ติดต่อ", "Contact")}</th></tr></thead><tbody>${join([
+      [U("การส่งบทความ / การพิจารณา", "Submissions / reviews"), 1], [U("เว็บไซต์ / ลงทะเบียน", "Website / registration"), 3],
+      [U("สถานที่ / อุปกรณ์", "Venue / equipment"), 5], [U("เรื่องอื่น ๆ", "Anything else"), 0]],
+      ([topic, i]) => `<tr><td>${topic}</td><td>${esc(L(D.teams[i].name))}</td><td>${t(D.teams[i].lead)}</td></tr>`)}</tbody></table></div>` },
+    { id: "credits", title: U("ที่มาของภาพประกอบ", "Photo Credits"), html: `<ul class="member-list">${join(Object.values(IMG), (im) => `<li><span>${esc(im.credit)}</span><a href="${esc(im.source)}" target="_blank" rel="noopener">${U("ที่มา", "Source")} ↗</a></li>`)}</ul>` }
   ])
 };
 
@@ -511,12 +550,22 @@ function build() {
   copyDir(path.join(SRC, "css"), path.join(DIST, "css"));
   copyDir(path.join(SRC, "js"), path.join(DIST, "js"));
   copyDir(path.join(SRC, "img"), path.join(DIST, "img"));
-  fs.writeFileSync(path.join(DIST, "index.html"), home());
-  for (const [key, fn] of Object.entries(pages)) {
-    const dir = path.join(DIST, PAGES[key].slug);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, "index.html"), fn());
+  let count = 0;
+  for (const lang of LANGS) {
+    LANG = lang;
+    const base = lang === "en" ? path.join(DIST, "en") : DIST;
+    CUR = "home";
+    fs.mkdirSync(base, { recursive: true });
+    fs.writeFileSync(path.join(base, "index.html"), home());
+    count++;
+    for (const [key, fn] of Object.entries(pages)) {
+      CUR = key;
+      const dir = path.join(base, PAGES[key].slug);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, "index.html"), fn());
+      count++;
+    }
   }
-  console.log(`Built ${1 + Object.keys(pages).length} pages → dist`);
+  console.log(`Built ${count} pages (ไทย + English) → dist`);
 }
 build();

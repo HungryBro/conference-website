@@ -10,12 +10,16 @@
     if (!nav || !toggle) return;
     nav.classList.toggle("open", open);
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "ปิดเมนู" : "เปิดเมนู");
+    toggle.setAttribute("aria-label", open ? toggle.dataset.labelClose : toggle.dataset.labelOpen);
     doc.body.style.overflow = open ? "hidden" : "";
   }
   if (toggle) toggle.addEventListener("click", function () { setMenu(!nav.classList.contains("open")); });
 
-  /* Dropdowns: click/tap + keyboard (hover handled by CSS on desktop) */
+  /* Dropdowns
+     - click/tap/Enter toggles .open (the source of truth)
+     - hover also previews on desktop (CSS), but a click that closes the menu
+       adds .no-hover so it really disappears until the mouse leaves
+     - hovering another item closes any menu opened by click → never two at once */
   var dropButtons = doc.querySelectorAll(".nav-item > button.nav-link");
   function closeDrops(except) {
     dropButtons.forEach(function (b) {
@@ -25,14 +29,20 @@
     });
   }
   dropButtons.forEach(function (btn) {
+    var item = btn.parentElement;
     btn.addEventListener("click", function (e) {
       e.stopPropagation();
-      var item = btn.parentElement;
       var open = !item.classList.contains("open");
       closeDrops(btn);
       item.classList.toggle("open", open);
+      item.classList.toggle("no-hover", !open);
       btn.setAttribute("aria-expanded", String(open));
     });
+    item.addEventListener("mouseenter", function () { closeDrops(btn); });
+    item.addEventListener("mouseleave", function () { item.classList.remove("no-hover"); });
+  });
+  doc.querySelectorAll(".nav-main > .nav-item").forEach(function (li) {
+    if (!li.querySelector(".dropdown")) li.addEventListener("mouseenter", function () { closeDrops(); });
   });
   doc.addEventListener("click", function () { closeDrops(); });
   doc.addEventListener("keydown", function (e) {

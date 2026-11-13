@@ -4,7 +4,7 @@ Rules for anyone (or any AI tool) editing this site. Keep the look consistent wi
 
 ## Brand
 - Light, formal, friendly. Blue on white. **No black** — use navy for text.
-- Language: Thai everywhere (menus, buttons, headings, labels). English only for proper names, the conference English name and acronym, and common tech terms (IoT, LaTeX, PDF).
+- Two languages: Thai site at `dist/`, English at `dist/en/`, built from the same data. The ไทย/EN switch sits in the gray utility pill (top right) and links to the same page in the other language. Text fields in the data file are `{ th, en }`; plain strings show in both.
 
 ## Color tokens (`app/src/css/style.css`) — sampled from cdti.ac.th
 | Token | Hex | Use |
@@ -38,7 +38,7 @@ Do not add new colors in components; use the tokens.
 
 ## Content
 - All content lives in `app/src/data/conference-data.js`. Then run `npm run build` in `app/`.
-- Placeholders: `[...]`, `รอประกาศ`, `---`. They render faded automatically. Do not invent facts.
+- Placeholders: `[...]`, `รอประกาศ` / `TBA`, `---`. They render faded automatically. Do not invent facts.
 - Plain, short Thai sentences. No marketing language.
 
 ## Accessibility

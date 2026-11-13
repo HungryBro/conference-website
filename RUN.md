@@ -8,7 +8,7 @@
 cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run dev
 ```
 
-แล้วเปิด **http://127.0.0.1:8080** ในเบราว์เซอร์
+แล้วเปิด **http://127.0.0.1:8080** ในเบราว์เซอร์ (ภาษาอังกฤษอยู่ที่ http://127.0.0.1:8080/en/ หรือกดปุ่ม EN มุมขวาบน)
 
 คำสั่งนี้ build เว็บใหม่ แล้วเปิดเซิร์ฟเวอร์ให้ในคำสั่งเดียว
 หยุดเซิร์ฟเวอร์: กด `Ctrl + C` ใน Terminal
@@ -16,6 +16,7 @@ cd /Users/dolphin/Desktop/Seminar/conference-website/app && npm run dev
 ## แก้เนื้อหา
 
 1. แก้ไฟล์ `app/src/data/conference-data.js` (ข้อมูลทุกหน้าอยู่ไฟล์นี้ไฟล์เดียว)
+   ข้อความส่วนใหญ่เขียนเป็น `{ th: "ภาษาไทย", en: "English" }` ให้แก้ทั้งสองภาษา
 2. เปิด Terminal อีกแท็บแล้วรัน
 
    ```bash
