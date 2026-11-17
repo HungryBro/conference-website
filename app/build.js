@@ -239,7 +239,7 @@ ${body}
     </div>
     <div class="footer-bottom">
       <span>© ${K.year} ${K.code} ${esc(L(K.name))} · ${K.instituteShort}</span>
-      <span>${U("ภาพประกอบจาก Wikimedia Commons (สาธารณสมบัติ / CC0)", "Photos from Wikimedia Commons (public domain / CC0)")} · <a href="${href("contact")}#credits">${U("ที่มาของภาพ", "Photo credits")}</a></span>
+      <span>${U("ภาพจากสถาบันเทคโนโลยีจิตรลดา (cdti.ac.th)", "Photos from Chitralada Technology Institute (cdti.ac.th)")} · <a href="${href("contact")}#credits">${U("ที่มาของภาพ", "Photo credits")}</a></span>
     </div>
   </div>
 </footer>
@@ -449,7 +449,7 @@ function home() {
     ${sectionTitle(U("สถานที่และการติดต่อ", "Venue & Contact"), "", "venue")}
     <div class="grid-2">
       <div class="card reveal">${contactList()}</div>
-      <div class="venue-img reveal">${img("hero")}<span class="cap">${U("ห้องจัดงานจะประกาศเมื่อยืนยันแล้ว (ภาพประกอบ)", "The room will be announced once confirmed (illustration)")}</span></div>
+      <div class="venue-img reveal">${img("hero")}<span class="cap">${U("ห้องจัดงานจะประกาศเมื่อยืนยันแล้ว", "The room will be announced once confirmed")}</span></div>
     </div>
   </div>
 </section>`);
@@ -552,7 +552,7 @@ const pages = {
 
   venue: () => subpage("", [
     { id: "place", title: U("สถานที่", "Location"), html: `<div class="grid-2"><div>${contactList()}</div>
-      <div class="venue-img">${img("hero")}<span class="cap">${U("ภาพประกอบ ห้องจัดงานยังรอยืนยัน", "Illustration only. The room is not confirmed yet.")}</span></div></div>` },
+      <div class="venue-img">${img("hero")}<span class="cap">${U("ห้องจัดงานยังรอยืนยัน", "The room is not confirmed yet.")}</span></div></div>` },
     { id: "travel", title: U("การเดินทาง", "Getting There"), html: note(`<span class="ph">${U("[ข้อมูลการเดินทางและที่จอดรถ จากทีมสถานที่และการจัดงาน]", "[Travel and parking details from the Venue & Logistics team]")}</span>`) }
   ]),
 
@@ -565,7 +565,7 @@ const pages = {
       [U("การส่งบทความ / การพิจารณา", "Submissions / reviews"), "tpc"], [U("เว็บไซต์ / ลงทะเบียน", "Website / registration"), "web"],
       [U("สถานที่ / อุปกรณ์", "Venue / equipment"), "venue"], [U("เรื่องอื่น ๆ", "Anything else"), "chair"]],
       ([topic, id]) => `<tr><td>${topic}</td><td>${esc(L(D.teams.find((x) => x.id === id).name))}</td><td>${t(teamContact(id))}</td></tr>`)}</tbody></table></div>` },
-    { id: "credits", title: U("ที่มาของภาพประกอบ", "Photo Credits"), html: `<ul class="member-list">${join(Object.values(IMG), (im) => `<li><span>${esc(im.credit)}</span><a href="${esc(im.source)}" target="_blank" rel="noopener">${U("ที่มา", "Source")} ↗</a></li>`)}</ul>` }
+    { id: "credits", title: U("ที่มาของภาพ", "Photo Credits"), html: `<ul class="member-list">${join(Object.values(IMG), (im) => `<li><span>${esc(im.credit)}</span><a href="${esc(im.source)}" target="_blank" rel="noopener">${U("ที่มา", "Source")} ↗</a></li>`)}</ul>` }
   ])
 };
 

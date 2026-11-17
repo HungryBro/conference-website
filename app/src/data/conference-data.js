@@ -171,17 +171,21 @@ const CONFERENCE_DATA = {
     address: { th: "สถาบันเทคโนโลยีจิตรลดา [ห้อง / อาคาร]", en: "Chitralada Technology Institute [room / building]" }
   },
 
-  // รูปประกอบ (อยู่ใน src/img) — ทุกรูปมาจาก Wikimedia Commons ใช้ได้ฟรี
-  // เปลี่ยนเป็นรูปจริงของงานได้: วางไฟล์ใหม่ใน src/img แล้วแก้ชื่อไฟล์ตรงนี้
+  // รูปประกอบ (อยู่ใน src/img) — ภาพจริงจากเว็บสถาบันเทคโนโลยีจิตรลดา (cdti.ac.th)
+  // เปลี่ยนรูปได้: วางไฟล์ใหม่ใน src/img แล้วแก้ชื่อไฟล์ตรงนี้
   images: {
-    hero: { file: "lecture-hall.jpg", alt: { th: "ห้องบรรยายขนาดใหญ่ที่มีจอโปรเจกเตอร์สองจอ", en: "Large lecture hall with two projector screens" },
-      credit: "Ohio University Lecture Hall, by Garden Sprite (CC0)", source: "https://commons.wikimedia.org/wiki/File:Ohio_University_Lecture_Hall.jpg" },
-    poster: { file: "poster-session.jpg", alt: { th: "ผู้เข้าร่วมงานคุยกันหน้าโปสเตอร์งานวิจัย", en: "Attendees discussing a research poster" },
-      credit: "2016 AMS Annual Meeting Poster Session, by NOAASatellites (public domain)", source: "https://commons.wikimedia.org/wiki/File:2016_AMS_Annual_Meeting_Poster_Session_(24083760450).jpg" },
-    research: { file: "computer-lab.jpg", alt: { th: "นักศึกษาทำงานร่วมกันในห้องปฏิบัติการคอมพิวเตอร์", en: "Students working together in a computer lab" },
-      credit: "Computer lab at vgdc, by A Anesh (CC0)", source: "https://commons.wikimedia.org/wiki/File:Computer_lab_at_vgdc.jpg" },
-    panel: { file: "panel-discussion.jpg", alt: { th: "วิทยากรถือไมโครโฟนพูดบนเวทีงานประชุม", en: "Speaker with a microphone on a conference stage" },
-      credit: "2013 NOAA Satellite Conference, by NOAASatellites (public domain)", source: "https://commons.wikimedia.org/wiki/File:2013_NOAA_Satellite_Conference_(14378955640).jpg" }
+    hero: { file: "cdti-cpe-lab-group.jpg",
+      alt: { th: "นักศึกษาวิศวกรรมคอมพิวเตอร์ CDTI ทำงานกับอุปกรณ์ในห้องปฏิบัติการ", en: "CDTI computer engineering students working with lab equipment" },
+      credit: "สถาบันเทคโนโลยีจิตรลดา: หลักสูตรวิศวกรรมคอมพิวเตอร์", source: "https://www.cdti.ac.th/branch/computer-engineering-program/" },
+    poster: { file: "cdti-students-team.jpg",
+      alt: { th: "นักศึกษา CDTI ช่วยกันทำงานที่โต๊ะคอมพิวเตอร์", en: "CDTI students working together at a computer" },
+      credit: "สถาบันเทคโนโลยีจิตรลดา: หลักสูตรวิศวกรรมคอมพิวเตอร์", source: "https://www.cdti.ac.th/branch/computer-engineering-program/" },
+    research: { file: "cdti-cpe-hardware.jpg",
+      alt: { th: "นักศึกษา CDTI วัดค่าวงจรบนแผงคอมพิวเตอร์", en: "A CDTI student measuring a computer circuit board" },
+      credit: "สถาบันเทคโนโลยีจิตรลดา: หลักสูตรวิศวกรรมคอมพิวเตอร์", source: "https://www.cdti.ac.th/branch/computer-engineering-program/" },
+    panel: { file: "cdti-server-room.jpg",
+      alt: { th: "นักศึกษา CDTI ทำงานในห้องเซิร์ฟเวอร์", en: "CDTI students working in a server room" },
+      credit: "สถาบันเทคโนโลยีจิตรลดา: คณะเทคโนโลยีดิจิทัล", source: "https://www.cdti.ac.th/faculty/faculty-of-digital-technology/" }
   },
 
   contact: {

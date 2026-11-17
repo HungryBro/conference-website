@@ -45,8 +45,10 @@ Do not add new colors in components; use the tokens.
 - Sub-pages via dropdown menu (CCAT style): About ▸ Charter / Committee / Archive, Papers ▸ CFP / Submission, Program, Registration, Venue, Contact.
 
 ## Images
+- Photos live in `app/src/img/` and are listed with their source page in `images` in the data file. All four are real photos from cdti.ac.th (computer engineering program and Faculty of Digital Technology pages).
 - Logo: `app/src/img/cdti-logo.svg`, the official file from cdti.ac.th. Header: logo | divider | conference acronym (logo only on phones). Footer: logo on a white tile.
-- Photos live in `app/src/img/`, listed with credits in `images` in the data file. All from Wikimedia Commons, public domain or CC0. Replace with real event photos when available.
+- To swap a photo: put the file in `src/img`, change `file` in the data file, run `npm run build`. Width and height are read from the file automatically.
+- Do not use the news photos on those pages (they show royal ceremonies and named people).
 
 ## Content
 - All content lives in `app/src/data/conference-data.js`. Then run `npm run build` in `app/`.
