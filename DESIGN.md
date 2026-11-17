@@ -3,21 +3,32 @@
 Rules for anyone (or any AI tool) editing this site. Keep the look consistent with cdti.ac.th.
 
 ## Brand
-- Light, formal, friendly. Blue on white. **No black** — use navy for text.
+- Formal but bright: blue and yellow from the CDTI logo lead, on a gray-blue page (#F2F3F7). **No black**: use deep blue for text.
 - Two languages: Thai site at `dist/`, English at `dist/en/`, built from the same data. The ไทย/EN switch sits in the gray utility pill (top right) and links to the same page in the other language. Text fields in the data file are `{ th, en }`; plain strings show in both.
 
-## Color tokens (`app/src/css/style.css`) — sampled from cdti.ac.th
+## Color tokens (`app/src/css/style.css`): blue + yellow from CDTI e-Learning (persevere)
+Source: persevere.cdti.ac.th and its CDTI logo (#4D79BC blue, #F3EB1A yellow). Page background #F2F3F7 is the sample the team picked.
+
+Rules:
+- Blue and yellow lead. Big areas (announcement bar, banners, "สำหรับผู้เขียน" section, news card, chair card, table headers, footer) use the blue band.
+- Only ONE blue family (hue ~220): `--band` for large areas, `--primary` for buttons/links/cards. Never mix in a grayish blue.
+- Yellow: main buttons (with deep-blue text), numbers and headings on blue, small accent bars and dots.
+- No large pure-white areas: sections alternate `--page` and `--tint`. White is for the header, cards and content blocks.
+
 | Token | Hex | Use |
 |---|---|---|
-| `--page` | #F3F3F3 | page background |
-| `--navy` | #22374D | top bar, dark sections, footer, headings, table headers |
-| `--slate` | #536583 | buttons, photo-card bands, circle arrow buttons, active tab (darkened from CDTI #607698 so yellow text passes 4.5:1) |
-| `--yellow` | #F5EB14 | text on slate buttons (18px bold), numbers on navy, footer headings |
-| `--blue` | #4B78BC | focus ring, decoration (CDTI accent) |
-| `--link` | #446FB0 | text links, current menu item (passes 4.5:1 on white and gray) |
-| `--sky-50` | #EEF3FB | icon tiles, hover backgrounds |
-| `--text` | #34445A | body text (no black) |
-| `--muted` | #5E6D82 | secondary text and placeholders |
+| `--page` | #F2F3F7 | page background |
+| `--tint` | #E9ECF3 | alternate section background (instead of white) |
+| `--band` | #1F4EAF | large blue areas (white text 7.6:1, yellow text 6:1) |
+| `--band-ink` | #E6EDFC | secondary text on the blue band |
+| `--primary` | #2C66E0 | buttons, links, active states, photo cards |
+| `--primary-dark` | #2357C4 | hover, links on `--tint` |
+| `--yellow` | #F3EB1A | main CTA buttons, accents on blue |
+| `--yellow-dark` | #E6DD0E | hover for yellow buttons |
+| `--deep` | #1E3A6E | headings and text on yellow (blue instead of black) |
+| `--sky-50` | #EAF1FE | icon tiles, hover |
+| `--text` | #2A3550 | body text |
+| `--muted` | #5E6A7E | secondary text and placeholders |
 
 Do not add new colors in components; use the tokens.
 
@@ -26,10 +37,10 @@ Do not add new colors in components; use the tokens.
 
 ## Shape & depth
 - Radius 10 / 18 / 28px. Cards white on the gray page; on white sections cards use the gray page color.
-- Soft navy-tinted shadows only.
+- Soft blue-tinted shadows. Large colored areas use only `--band`.
 
 ## Structure
-- Layout copies cdti.ac.th: navy announcement bar → white header (logo left, gray utility pill + main nav with outlined "ส่งบทความ" button) → photo banner with overlapping white quick-link card → news block (navy feature card + rows with circle arrows) → navy band with photo cards → navy footer.
+- Layout copies cdti.ac.th: blue announcement bar → white header (logo left, gray utility pill + main nav with outlined "ส่งบทความ" button) → blue photo banner with overlapping white quick-link card → news block (blue feature card + rows with blue circle arrows) → blue section with photo cards → blue footer with a yellow top line.
 - Home = one long page with a sticky section nav (ECTI-FIT style) + "ดูทั้งหมด" links to sub-pages.
 - Sub-pages via dropdown menu (CCAT style): About ▸ Charter / Committee / Archive, Papers ▸ CFP / Submission, Program, Registration, Venue, Contact.
 

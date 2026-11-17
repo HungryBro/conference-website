@@ -175,7 +175,7 @@ function layout(body) {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(U("งานประชุมวิชาการของรายวิชา", "Mini-conference of course"))} ${K.code} ${esc(L(K.name))} · ${esc(L(K.faculty))} · ${esc(L(K.institute))}">
-<meta name="theme-color" content="#22374D">
+<meta name="theme-color" content="#1F4EAF">
 <meta name="color-scheme" content="light">
 <link rel="canonical" href="${absHref(CUR, LANG)}">
 <link rel="alternate" hreflang="th" href="${absHref(CUR, "th")}">
@@ -480,7 +480,7 @@ const pages = {
       { id: "identity", title: U("อัตลักษณ์ของงาน", "Conference Identity"), lead: U("ช่องสีจางคือส่วนที่ทีมยังต้องตัดสินใจ", "Faded fields are still to be decided by the team."), html: kv([
         [U("ชื่องาน (ไทย)", "Name (Thai)"), t(C.name.th)], [U("ชื่องาน (อังกฤษ)", "Name (English)"), t(C.name.en)], [U("ชื่อย่อ", "Acronym"), t(C.acronym)], [U("ธีม", "Theme"), t(C.theme)],
         [U("ขอบเขต", "Scope"), `${U(`${D.topics.length} กลุ่มหัวข้อ`, `${D.topics.length} tracks`)} · <a href="${href("cfp")}">${U("ดูรายละเอียด", "Details")}</a>`], [U("กลุ่มเป้าหมาย", "Audience"), t(C.audience)],
-        [U("วันและสถานที่", "Date & venue"), `${t(C.date)} · ${t(C.venue)}`], [U("อัตลักษณ์ภาพ", "Visual identity"), U("สีน้ำเงินเข้ม น้ำเงินเทา และเหลือง ตามเว็บสถาบัน CDTI", "Navy, slate blue and yellow, following the CDTI website")]]) },
+        [U("วันและสถานที่", "Date & venue"), `${t(C.date)} · ${t(C.venue)}`], [U("อัตลักษณ์ภาพ", "Visual identity"), U("สีฟ้าและเหลือง", "Blue and yellow")]]) },
       { id: "workflow", title: U("ขั้นตอนของงาน", "Conference Workflow"), html: `<ol class="steps">${join(D.workflow, (w) => `<li>${esc(L(w))}</li>`)}</ol>` },
       { id: "roadmap", title: U("แผนงาน 9 สัปดาห์", "9-Week Roadmap"), lead: U("จากวางแผนถึงวันจัดงาน", "From planning to conference day"), html: `<div class="table-wrap"><table>
         <thead><tr><th>${U("สัปดาห์", "Week")}</th><th>${U("งานหลัก", "Milestone")}</th><th>${U("สถานะ", "Status")}</th></tr></thead>
